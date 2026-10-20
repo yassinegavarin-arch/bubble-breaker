@@ -47,15 +47,15 @@ Créer une clé gratuite sur [aistudio.google.com](https://aistudio.google.com) 
 
 ### 4. Première collecte (manuelle)
 
-Dans un terminal, ou via un outil comme Hoppscotch :
+Ouvrir cette adresse dans un navigateur (une exécution possible toutes les 90 minutes) :
 
 ```bash
 curl "https://bubble-breaker-psi.vercel.app/api/cron?step=all"
 ```
 
-### 5. Collecte toutes les 3 heures (facultatif)
+### 5. Collecte automatique
 
-Dans GitHub > **Settings** > **Secrets and variables** > **Actions**, créer `APP_URL` et `CRON_SECRET`. Le fichier `.github/workflows/collecte.yml` s'en charge ensuite.
+Le fichier `.github/workflows/collecte.yml` lance la collecte toutes les 3 heures et le classement IA toutes les heures, sans secret à configurer.
 
 ## Fichiers clés
 
