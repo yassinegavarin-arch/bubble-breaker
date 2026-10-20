@@ -1,5 +1,15 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
+// Polices hébergées par l'application (aucun appel à Google Fonts depuis le navigateur des visiteurs).
+import "@fontsource/cormorant-garamond/400.css";
+import "@fontsource/cormorant-garamond/500.css";
+import "@fontsource/cormorant-garamond/600.css";
+import "@fontsource/cormorant-garamond/400-italic.css";
+import "@fontsource/cormorant-garamond/500-italic.css";
+import "@fontsource/outfit/300.css";
+import "@fontsource/outfit/400.css";
+import "@fontsource/outfit/500.css";
+import "@fontsource/outfit/600.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -12,7 +22,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#1c1917",
+  themeColor: "#faf8f5",
 };
 
 function BrandMark() {
@@ -27,15 +37,6 @@ function BrandMark() {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="fr">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Outfit:wght@300;400;500;600&display=swap"
-        />
-      </head>
       <body>
         <header className="site-header">
           <div className="nav-shell">
@@ -45,7 +46,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </Link>
             <nav className="nav">
               <Link href="/#personnalites">Personnalités</Link>
-              <Link href="/#bulle">Bulle de la semaine</Link>
+              <Link href="/#bulle">Bulle du moment</Link>
               <Link href="/methode" className="cta">
                 La méthode
               </Link>
@@ -71,12 +72,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   Sources : presse en accès libre et Google News. Les réseaux sociaux et les messageries (TikTok,
                   Instagram, X, WhatsApp, Telegram) ne sont pas encore couverts.
                 </p>
-                <p>
-                  <Link href="/methode">Lire la méthode</Link> · Portraits : Wikimedia Commons
+                <p className="footer-links">
+                  <Link href="/methode">La méthode</Link>
+                  <Link href="/mentions-legales">Mentions légales</Link>
+                  <Link href="/confidentialite">Confidentialité</Link>
+                  <Link href="/conditions">Conditions d&apos;utilisation</Link>
+                  <Link href="/credits">Crédits photos</Link>
                 </p>
               </div>
             </div>
-            <div className="fine">Classement automatique par IA : des erreurs sont possibles, chaque carte peut être signalée.</div>
+            <div className="fine">Site non commercial, sans cookie ni publicité. Classement automatique par IA : des erreurs sont possibles, chaque carte peut être signalée.</div>
           </div>
         </footer>
       </body>

@@ -56,10 +56,10 @@ export function CountUp({ value, duration = 1600 }: { value: number; duration?: 
   return <span ref={ref}>{n.toLocaleString("fr-FR")}</span>;
 }
 
-const TINTS = ["rgba(31,138,91,0.55)", "rgba(217,72,28,0.55)", "rgba(192,138,43,0.55)", "rgba(155,27,27,0.5)"];
+const TINTS = ["rgba(31,138,91,0.28)", "rgba(217,72,28,0.28)", "rgba(192,138,43,0.32)", "rgba(155,27,27,0.22)"];
 
 /** Bulles qui montent dans le héros ; un clic les fait éclater. */
-export function Bubbles({ count = 18 }: { count?: number }) {
+export function Bubbles({ count = 14 }: { count?: number }) {
   // Valeurs fixes (pseudo-aléatoires déterministes) pour éviter tout écart entre serveur et navigateur.
   const bubbles = useMemo(
     () =>
@@ -129,6 +129,7 @@ export interface FlipCardData {
   neutre: number;
   defavorable: number;
   gap: number | null;
+  featured?: boolean;
 }
 
 function pct(part: number, total: number) {
@@ -143,7 +144,7 @@ export function FlipCard({ d, delay = 0 }: { d: FlipCardData; delay?: number }) 
 
   return (
     <Reveal delay={delay}>
-      <div className={`flip${flipped ? " flipped" : ""}`}>
+      <div className={`flip${flipped ? " flipped" : ""}${d.featured ? " featured" : ""}`}>
         <div
           className="flip-inner"
           role="button"
@@ -168,7 +169,7 @@ export function FlipCard({ d, delay = 0 }: { d: FlipCardData; delay?: number }) 
             )}
             <div className="shade" />
             <div className="top">
-              <span className="chip-glass">{d.country}</span>
+              <span className="chip-glass">{d.featured ? "★ Bulle du moment" : d.country}</span>
               <span className="turn" title="Retourner">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                   <path d="M3 12a9 9 0 0 1 15.5-6.2L21 8M21 3v5h-5M21 12a9 9 0 0 1-15.5 6.2L3 16M3 21v-5h5" />

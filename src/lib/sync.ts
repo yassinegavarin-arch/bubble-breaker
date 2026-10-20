@@ -15,3 +15,9 @@ export async function syncPersonalities(db: SupabaseClient): Promise<number> {
   if (e2) throw e2;
   return rows.length;
 }
+
+/** Supprime les signalements de plus de 12 mois (durée annoncée dans la politique de confidentialité). */
+export async function purgeOldReports(db: SupabaseClient): Promise<void> {
+  const limit = new Date(Date.now() - 365 * 24 * 3600 * 1000).toISOString();
+  await db.from("reports").delete().lt("created_at", limit);
+}

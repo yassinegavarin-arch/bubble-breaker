@@ -6,7 +6,7 @@ import { getCounts, getLastUpdate, getOverview, getPersonalities } from "@/lib/q
 import { isConfigured } from "@/lib/supabase";
 import { displayName } from "@/lib/types";
 import { Bubbles, CountUp, FlipCard, Reveal, type FlipCardData } from "@/components/client";
-import { SetupNotice, ThermometerView, formatDate } from "@/components/ui";
+import { SetupNotice, formatDate } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +33,9 @@ export default async function Home() {
     return { p, b: balance(rows), t: thermometer(rows) };
   });
   const bubble = stats.filter((s) => s.t.gap != null).sort((a, b) => (b.t.gap ?? 0) - (a.t.gap ?? 0))[0];
-  const sorted = [...stats].sort((a, b) => b.b.total - a.b.total);
+  const sorted = [...stats].sort(
+    (a, b) => Number(b.p.id === bubble?.p.id) - Number(a.p.id === bubble?.p.id) || b.b.total - a.b.total,
+  );
 
   const cards: FlipCardData[] = sorted.map(({ p, b, t }) => {
     const portrait = portraits[p.slug] ?? null;
@@ -49,6 +51,7 @@ export default async function Home() {
       neutre: b.neutre,
       defavorable: b.defavorable,
       gap: t.gap,
+      featured: p.id === bubble?.p.id,
     };
   });
 
@@ -59,36 +62,30 @@ export default async function Home() {
       <Hero articles={counts.articles} sources={counts.sources} people={people.length} />
 
       {bubble && (
-        <section className="block" id="bulle">
+        <section className="bubble-band" id="bulle">
           <div className="wrap">
             <Reveal>
-              <span className="kicker">Bulle de la semaine</span>
-              <h2 className="section-title">Deux camps, deux réalités</h2>
-              <p className="section-lead">
-                La personnalité dont le portrait change le plus d&apos;un bord médiatique à l&apos;autre sur 7 jours.
-              </p>
-            </Reveal>
-            <Reveal delay={120}>
-              <Link href={`/p/${bubble.p.slug}?vue=egal`} className="spotlight">
-                <div className="photo">
-                  {bubblePhoto ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={bubblePhoto.src} alt={displayName(bubble.p)} />
-                  ) : null}
+              <Link href={`/p/${bubble.p.slug}?vue=egal`} className="moment">
+                {bubblePhoto ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img className="moment-photo" src={bubblePhoto.src} alt={displayName(bubble.p)} />
+                ) : null}
+                <div className="moment-text">
+                  <span className="moment-kicker">Bulle du moment</span>
+                  <strong>{displayName(bubble.p)}</strong>
+                  <span className="moment-line">
+                    Les médias {bubble.t.warmest} et {bubble.t.coldest} ne racontent pas la même histoire.
+                  </span>
                 </div>
-                <div className="body">
-                  <h3>{displayName(bubble.p)}</h3>
-                  <div className="gap-number">
-                    {bubble.t.gap}
-                    <small> points d&apos;écart</small>
-                  </div>
-                  <p className="muted" style={{ margin: 0 }}>
-                    Les médias {bubble.t.warmest} la présentent bien plus favorablement que les médias {bubble.t.coldest}.
-                  </p>
-                  <div>
-                    <ThermometerView t={bubble.t} />
-                  </div>
-                </div>
+                <span className="moment-gap">
+                  {bubble.t.gap}
+                  <small>pts d&apos;écart</small>
+                </span>
+                <span className="moment-go" aria-hidden="true">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                    <path d="M5 12h14M13 6l6 6-6 6" />
+                  </svg>
+                </span>
               </Link>
             </Reveal>
           </div>

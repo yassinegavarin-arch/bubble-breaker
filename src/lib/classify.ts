@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { ARGUMENTS, STANCES, displayName, type Stance } from "./types";
 
-export const PROMPT_VERSION = "v1";
+export const PROMPT_VERSION = "v2";
 const CHUNK = 10;
 /** Appels IA simultanés (le quota gratuit tolère une dizaine de requêtes par minute). */
 const PARALLEL = 4;
@@ -33,6 +33,16 @@ Règles :
 - "defavorable" : l'article la critique, relaie des attaques, des échecs, des affaires ou des sondages négatifs.
 - "neutre" : information factuelle sans orientation nette, ou critiques et soutiens équilibrés.
 - "hors_sujet" : la personnalité n'est pas le sujet (homonyme, simple mention).
+- Juge toujours du point de vue de la personnalité visée, même si l'article parle surtout d'un adversaire :
+  ce qui avantage son adversaire lui est défavorable, ce qui nuit à son adversaire lui est favorable.
+- Sondages et résultats : la personnalité en tête ou en progression → favorable ; devancée ou en recul → défavorable.
+- Une attaque qu'elle lance contre un adversaire est neutre pour elle, sauf si l'article la présente sous un jour positif ou négatif.
+
+Exemples :
+- Visée : LULA. « Flávio Bolsonaro obtient 51,5 % contre 48,5 % pour Lula, selon un sondage » → defavorable (sondage, devancé).
+- Visée : Emmanuel MACRON. « Les oppositions dénoncent le passage en force du gouvernement Macron » → defavorable (relaie des critiques).
+- Visée : Jordan BARDELLA. « Bardella en tête de toutes les intentions de vote pour 2027 » → favorable (sondage, en tête).
+- Visée : Donald TRUMP. « Trump reçoit Zelensky à la Maison-Blanche » → neutre (fait sans orientation).
 - Satire ou second degré : indique satire=true et classe selon le sens réel, pas le sens littéral.
 - confidence : entre 0 et 1. Sois prudent : un titre seul et ambigu ne dépasse pas 0,6.
 - argument : une seule valeur parmi ${ARGUMENTS.join(", ")}.
@@ -178,7 +188,8 @@ export async function classifyPending(
     .select(
       "article_id, personality_id, articles!inner(title, excerpt, source_name, published_at), personalities!inner(first_name, last_name, role)",
     )
-    .is("classified_at", null)
+    // En attente : jamais classés, ou classés avec une ancienne version de la consigne.
+    .or(`classified_at.is.null,prompt_version.neq.${PROMPT_VERSION}`)
     .is("error", null)
     .order("articles(published_at)", { ascending: false })
     .limit(Math.max(limit * 5, 300));

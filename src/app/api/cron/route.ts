@@ -4,7 +4,7 @@ import { classifyPending } from "@/lib/classify";
 import { collect } from "@/lib/collect";
 import { updateStories } from "@/lib/stories";
 import { adminClient } from "@/lib/supabase";
-import { syncPersonalities } from "@/lib/sync";
+import { purgeOldReports, syncPersonalities } from "@/lib/sync";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -36,6 +36,7 @@ export async function GET(req: NextRequest) {
   // Liste des personnalités alignée sur le code à chaque appel (opération légère).
   try {
     result.personalities = await syncPersonalities(db);
+    await purgeOldReports(db);
   } catch (err) {
     result.syncError = String((err as { message?: string })?.message ?? err);
   }
