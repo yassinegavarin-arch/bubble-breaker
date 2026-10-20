@@ -7,12 +7,17 @@ import { VIRAL_SOURCES } from "./viral";
  * ajoute les nouvelles, met à jour les existantes, désactive celles retirées.
  */
 export async function syncPersonalities(db: SupabaseClient): Promise<number> {
-  const rows = PERSONALITIES.map(({ wiki: _wiki, ...p }) => ({ ...p, active: true }));
+  const rows = PERSONALITIES.map((p) => ({ ...p, active: true, origin: "curated" }));
   const { error } = await db.from("personalities").upsert(rows, { onConflict: "slug" });
   if (error) throw error;
 
   const slugs = PERSONALITIES.map((p) => `"${p.slug}"`).join(",");
-  const { error: e2 } = await db.from("personalities").update({ active: false }).not("slug", "in", `(${slugs})`);
+  // Seules les personnalités de la liste éditoriale retirées du code sont désactivées.
+  const { error: e2 } = await db
+    .from("personalities")
+    .update({ active: false })
+    .eq("origin", "curated")
+    .not("slug", "in", `(${slugs})`);
   if (e2) throw e2;
   return rows.length;
 }

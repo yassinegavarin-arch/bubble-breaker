@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { mentions, stripHtml, truncate } from "./text";
 import type { Personality } from "./types";
+import { trackedPersonalities } from "./collect";
 
 /**
  * Vidéos YouTube les plus vues de la semaine sur chaque personnalité (API YouTube Data v3, gratuite).
@@ -41,11 +42,11 @@ export interface YouTubeReport {
   errors: string[];
 }
 
-export async function collectYouTube(db: SupabaseClient, force = false): Promise<YouTubeReport> {
+export async function collectYouTube(db: SupabaseClient, force = false, only?: Personality[]): Promise<YouTubeReport> {
   const report: YouTubeReport = { searches: 0, videos: 0, mentionsNew: 0, errors: [] };
   if (!process.env.YOUTUBE_API_KEY) return { ...report, skipped: "YOUTUBE_API_KEY absente" };
 
-  if (!force) {
+  if (!force && !only) {
     const { data: last } = await db
       .from("articles")
       .select("fetched_at")
@@ -57,15 +58,14 @@ export async function collectYouTube(db: SupabaseClient, force = false): Promise
     if (hours < MIN_INTERVAL_H) return { ...report, skipped: `dernière collecte il y a ${hours.toFixed(1)} h` };
   }
 
-  const { data: people, error } = await db.from("personalities").select("*").eq("active", true);
-  if (error) throw error;
+  const people = only ?? (await trackedPersonalities(db));
   const since = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
 
   const rows: Record<string, unknown>[] = [];
   const links: { key: string; personality_id: number }[] = [];
 
   await Promise.all(
-    ((people ?? []) as Personality[]).map(async (p) => {
+    people.map(async (p) => {
       try {
         const lang = language(p);
         const search = await yt<{ items: SearchItem[] }>("search", {

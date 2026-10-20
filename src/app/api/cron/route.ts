@@ -22,7 +22,7 @@ async function minutesSince(db: SupabaseClient, table: string, column: string): 
 
 /**
  * Tâche planifiée : collecte, regroupement en faits, score de viralité, classification IA.
- * Appel : GET /api/cron?step=all|classify
+ * Appel : GET /api/cron?step=all|classify|youtube
  * Avec l'en-tête Authorization: Bearer <CRON_SECRET> (Vercel Cron) : exécution immédiate, toutes étapes.
  * Sans secret : autorisé pour "all" et "classify" uniquement, avec un délai minimum entre deux exécutions.
  * Les données traitées sont publiques ; le délai empêche d'épuiser les quotas gratuits.
@@ -44,9 +44,12 @@ export async function GET(req: NextRequest) {
   }
 
   if (!trusted) {
-    if (step !== "all" && step !== "classify") {
+    if (step !== "all" && step !== "classify" && step !== "youtube") {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
+  }
+  // La collecte YouTube se limite elle-même à une exécution toutes les 6 heures.
+  if (!trusted && step !== "youtube") {
     const elapsed =
       step === "all" ? await minutesSince(db, "articles", "fetched_at") : await minutesSince(db, "mentions", "classified_at");
     const cooldown = step === "all" ? COOLDOWN_ALL_MIN : COOLDOWN_CLASSIFY_MIN;

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
+import { HeaderSearch } from "@/components/client";
 // Polices hébergées par l'application (aucun appel à Google Fonts depuis le navigateur des visiteurs).
 import "@fontsource/cormorant-garamond/400.css";
 import "@fontsource/cormorant-garamond/500.css";
@@ -46,6 +47,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <nav className="nav">
               <Link href="/#personnalites">Personnalités</Link>
               <Link href="/#bulle">Bulle du moment</Link>
+              <HeaderSearch />
               <Link href="/methode" className="cta">
                 La méthode
               </Link>

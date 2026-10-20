@@ -1,12 +1,18 @@
 import type { Metadata } from "next";
 import { PERSONALITIES } from "@/data/personalities";
 import { getPortraits } from "@/lib/portraits";
+import { getPersonalities } from "@/lib/queries";
+import { isConfigured } from "@/lib/supabase";
 
 export const metadata: Metadata = { title: "Crédits photos" };
-export const revalidate = 86400;
+export const revalidate = 3600;
 
 export default async function Credits() {
-  const portraits = await getPortraits();
+  // Liste choisie et fiches créées par la recherche.
+  const people = isConfigured()
+    ? (await getPersonalities().catch(() => [])).map((p) => ({ slug: p.slug, wiki: p.wiki ?? undefined, first_name: p.first_name ?? "", last_name: p.last_name }))
+    : PERSONALITIES;
+  const portraits = await getPortraits(people);
   return (
     <div className="wrap prose">
       <span className="kicker">Crédits</span>
@@ -24,7 +30,7 @@ export default async function Credits() {
           </tr>
         </thead>
         <tbody>
-          {PERSONALITIES.map((p) => {
+          {people.map((p) => {
             const portrait = portraits[p.slug];
             return (
               <tr key={p.slug}>

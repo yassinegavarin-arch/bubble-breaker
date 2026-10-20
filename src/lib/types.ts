@@ -32,6 +32,12 @@ export interface Personality {
   search_terms: string[];
   news_editions: string[];
   active: boolean;
+  wiki: string | null;
+  wikidata: string | null;
+  /** "curated" : liste éditoriale ; "search" : créée par une recherche de visiteur. */
+  origin: "curated" | "search";
+  last_viewed_at: string | null;
+  created_at: string;
 }
 
 export interface Source {
@@ -71,6 +77,7 @@ export interface FeedRow {
   views: number | null;
   likes: number | null;
   thumbnail: string | null;
+  title_fr: string | null;
 }
 
 /** Seuil de confiance en dessous duquel un classement n'est pas affiché. */

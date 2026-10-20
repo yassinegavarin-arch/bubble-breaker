@@ -37,13 +37,20 @@ export default async function Methode() {
         personnalité sont récupérées avec leur nombre de vues, puis classées comme les articles. Elles se lisent
         directement dans l&apos;application.
       </p>
+      <p>
+        <strong>Recherche libre.</strong> Toute personnalité publique peut être recherchée, à une condition : avoir un
+        article sur Wikipédia en français, identifié dans Wikidata comme une personne majeure. Une personne privée
+        n&apos;a pas d&apos;article : elle est introuvable. La fiche est créée à la première recherche, puis suivie tant
+        qu&apos;elle est consultée (14 jours sans visite et la collecte s&apos;arrête).
+      </p>
 
       <h2>2. Classement</h2>
       <p>
         Une IA lit le titre et l&apos;extrait, et indique si l&apos;article présente la personnalité sous un jour
         favorable, défavorable ou neutre, avec un indice de confiance et une justification d&apos;une phrase. Elle juge
         le contenu, jamais le média. Un classement dont la confiance est inférieure à {MIN_CONFIDENCE * 100} % n&apos;est
-        pas affiché. Version de la consigne : {PROMPT_VERSION}.
+        pas affiché. Quelle que soit la langue de l&apos;article, l&apos;IA rédige en français son titre et son
+        résumé. Version de la consigne : {PROMPT_VERSION}.
       </p>
 
       <h2>3. Viralité</h2>

@@ -68,15 +68,19 @@ export default function Confidentialite() {
       <p>
         Le site traite des informations publiques sur des personnalités politiques (nom, fonction, articles de presse
         les concernant, portrait publié sous licence libre), dans un but d&apos;information du public sur le débat
-        politique. Les titres et extraits d&apos;articles, qui sont publics, sont transmis à un service
-        d&apos;intelligence artificielle (Google Gemini) pour être classés. Aucune donnée de visiteur n&apos;est
+        politique. Seules les personnes disposant d&apos;un article Wikipédia peuvent être recherchées : le site ne
+        permet pas de chercher un particulier. Une fiche qui n&apos;est plus consultée pendant 14 jours cesse
+        d&apos;être alimentée, et toute personne concernée peut exercer ses droits (opposition, effacement) à
+        l&apos;adresse ci-dessous. Les recherches des visiteurs ne sont pas enregistrées, seule la date de dernière
+        consultation d&apos;une fiche l&apos;est. Les titres et extraits d&apos;articles, qui sont publics, sont transmis à un service
+        d&apos;intelligence artificielle (Google Gemini) pour être classés et traduits en français. Aucune donnée de visiteur n&apos;est
         transmise à ce service.
       </p>
 
       <h2>Sous-traitants et transferts</h2>
       <p>
         Vercel Inc. (hébergement du site, États-Unis), Supabase Inc. (base de données hébergée à Francfort, Union
-        européenne) et Google (classement par IA des articles, données des vidéos YouTube). Les transferts vers les États-Unis sont encadrés par le cadre de protection des données UE–États-Unis
+        européenne), la Wikimedia Foundation (recherche des personnalités, côté serveur) et Google (classement par IA des articles, données des vidéos YouTube). Les transferts vers les États-Unis sont encadrés par le cadre de protection des données UE–États-Unis
         ou par les clauses contractuelles types de la Commission européenne.
       </p>
 

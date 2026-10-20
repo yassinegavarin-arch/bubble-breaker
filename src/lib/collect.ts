@@ -61,14 +61,29 @@ function cleanGoogleTitle(title: string, sourceName: string | null): string {
   return i > 20 ? title.slice(0, i).trim() : title;
 }
 
-export async function collect(db: SupabaseClient): Promise<CollectReport> {
-  const [{ data: people, error: e1 }, { data: sources, error: e2 }] = await Promise.all([
-    db.from("personalities").select("*").eq("active", true),
+/** Personnalités à suivre : la liste éditoriale, plus celles recherchées et consultées depuis moins de 14 jours. */
+export async function trackedPersonalities(db: SupabaseClient): Promise<Personality[]> {
+  const since = new Date(Date.now() - 14 * 24 * 3600 * 1000).toISOString();
+  const { data, error } = await db
+    .from("personalities")
+    .select("*")
+    .eq("active", true)
+    .or(`origin.eq.curated,last_viewed_at.gte.${since},created_at.gte.${since}`);
+  if (error) throw error;
+  return (data ?? []) as Personality[];
+}
+
+/**
+ * Collecte. Sans argument : toutes les personnalités suivies et tous les flux RSS des médias.
+ * Avec `only` : uniquement les recherches Google News de ces personnalités (création d'une fiche).
+ */
+export async function collect(db: SupabaseClient, only?: Personality[]): Promise<CollectReport> {
+  const [people, { data: sources, error: e2 }] = await Promise.all([
+    only ? Promise.resolve(only) : trackedPersonalities(db),
     db.from("sources").select("*").eq("active", true),
   ]);
-  if (e1) throw e1;
   if (e2) throw e2;
-  const personalities = (people ?? []) as Personality[];
+  const personalities = people;
   const sourceList = (sources ?? []) as Source[];
 
   const candidates = new Map<string, Candidate>();
@@ -120,7 +135,7 @@ export async function collect(db: SupabaseClient): Promise<CollectReport> {
     }),
   );
   // 2. Flux RSS directs des médias
-  const feeds = sourceList.filter((s) => s.feed_url);
+  const feeds = only ? [] : sourceList.filter((s) => s.feed_url);
 
   await Promise.all([
     pool(searches, CONCURRENCY, async ({ p, edition, url }) => {

@@ -47,12 +47,26 @@ async function fetchPortrait(slug: string, wiki: string): Promise<Portrait | nul
   return images ? { src: `/api/portrait/${slug}`, credit: images.credit } : null;
 }
 
-export async function getPortraits(): Promise<Record<string, Portrait | null>> {
-  const entries = await Promise.all(PERSONALITIES.map(async (p) => [p.slug, await fetchPortrait(p.slug, p.wiki)] as const));
+/** Titre Wikipédia d'une personnalité : liste du code, sinon base de données (fiches créées par recherche). */
+export async function wikiTitle(slug: string): Promise<string | null> {
+  const def = PERSONALITIES.find((p) => p.slug === slug);
+  if (def) return def.wiki;
+  const { publicClient } = await import("./supabase");
+  const { data } = await publicClient().from("personalities").select("wiki").eq("slug", slug).maybeSingle();
+  return (data?.wiki as string | undefined) ?? null;
+}
+
+export async function getPortraits(people: { slug: string; wiki?: string | null }[]): Promise<Record<string, Portrait | null>> {
+  const entries = await Promise.all(
+    people.map(async (p) => {
+      const wiki = PERSONALITIES.find((d) => d.slug === p.slug)?.wiki ?? p.wiki;
+      return [p.slug, wiki ? await fetchPortrait(p.slug, wiki) : null] as const;
+    }),
+  );
   return Object.fromEntries(entries);
 }
 
 export async function getPortrait(slug: string): Promise<Portrait | null> {
-  const def = PERSONALITIES.find((p) => p.slug === slug);
-  return def ? fetchPortrait(def.slug, def.wiki) : null;
+  const wiki = await wikiTitle(slug);
+  return wiki ? fetchPortrait(slug, wiki) : null;
 }

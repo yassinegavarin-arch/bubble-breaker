@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
-import { PERSONALITIES } from "@/data/personalities";
-import { WIKI_UA, wikiImages } from "@/lib/portraits";
+import { WIKI_UA, wikiImages, wikiTitle } from "@/lib/portraits";
 
 /** Sert le portrait d'une personnalité depuis Wikimedia Commons, mis en cache 7 jours par le CDN. */
 export async function GET(_req: Request, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const def = PERSONALITIES.find((p) => p.slug === slug);
-  const images = def ? await wikiImages(def.wiki) : null;
+  const wiki = await wikiTitle(slug);
+  const images = wiki ? await wikiImages(wiki) : null;
   if (!images) return new NextResponse(null, { status: 404 });
 
   for (const url of images.candidates) {

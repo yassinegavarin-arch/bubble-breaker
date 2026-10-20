@@ -42,14 +42,14 @@ export const PERSONALITIES: PersonalityDef[] = [
   { slug: "friedrich-merz", first_name: "Friedrich", last_name: "MERZ", country: "DE", role: "Chancelier fédéral allemand", search_terms: ["Merz"], news_editions: ["fr", "de"], wiki: "Friedrich_Merz" },
 ];
 
-export const COUNTRIES: Record<string, string> = {
-  FR: "France",
-  US: "États-Unis",
-  BR: "Brésil",
-  AR: "Argentine",
-  IT: "Italie",
-  UA: "Ukraine",
-  RU: "Russie",
-  GB: "Royaume-Uni",
-  DE: "Allemagne",
-};
+const REGION_NAMES = new Intl.DisplayNames(["fr"], { type: "region" });
+
+/** Nom du pays en français pour n'importe quel code ISO 3166 (FR → « France »). */
+export function countryName(code: string | null | undefined): string {
+  if (!code) return "";
+  try {
+    return REGION_NAMES.of(code.toUpperCase()) ?? code;
+  } catch {
+    return code;
+  }
+}

@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { COUNTRIES } from "@/data/personalities";
+import { after } from "next/server";
+import { countryName } from "@/data/personalities";
 import { balance, storyCards, thermometer, topArguments, topVideos } from "@/lib/analysis";
 import { getPortrait } from "@/lib/portraits";
 import { getFeed, getPersonality } from "@/lib/queries";
-import { isConfigured } from "@/lib/supabase";
+import { adminClient, isConfigured } from "@/lib/supabase";
 import { displayName } from "@/lib/types";
-import { Reveal, VideoCard, type VideoData } from "@/components/client";
+import { AutoRefresh, Reveal, VideoCard, type VideoData } from "@/components/client";
 import { SetupNotice, StoryCardView, ThermometerView } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
@@ -42,6 +43,15 @@ export default async function PersonalityPage({ params, searchParams }: Props) {
 
   const [rows, portrait] = await Promise.all([getFeed(p.id, PERIODS[period]), getPortrait(slug)]);
   const b = balance(rows);
+
+  // Fiches créées par la recherche : on retient la dernière consultation (au plus une écriture par heure)
+  // pour savoir quelles personnalités continuer à suivre.
+  if (p.origin === "search" && (!p.last_viewed_at || Date.now() - Date.parse(p.last_viewed_at) > 3_600_000)) {
+    after(async () => {
+      await adminClient().from("personalities").update({ last_viewed_at: new Date().toISOString() }).eq("id", p.id);
+    });
+  }
+  const analysing = p.origin === "search" && rows.length === 0 && Date.now() - Date.parse(p.created_at) < 20 * 60_000;
   const href = (v: View, per: Period = period, social = onlySocial) =>
     `/p/${slug}?vue=${v}&periode=${per}${social ? "&reseaux=1" : ""}`;
   const back = href(view);
@@ -63,7 +73,7 @@ export default async function PersonalityPage({ params, searchParams }: Props) {
             <div>
               <h1>{name}</h1>
               <div className="role">
-                {COUNTRIES[p.country] ?? p.country} · {p.role}
+                {countryName(p.country)} · {p.role}
               </div>
               {portrait && (
                 <a className="credit" style={{ color: "rgba(255,255,255,0.55)" }} href={portrait.credit} target="_blank" rel="noopener noreferrer">
@@ -121,7 +131,14 @@ export default async function PersonalityPage({ params, searchParams }: Props) {
 
         {sp.merci && <div className="thanks">Merci, votre signalement a été enregistré.</div>}
 
-        {rows.length === 0 ? (
+        {analysing ? (
+          <div className="empty analysing">
+            <span className="spinner" aria-hidden="true" />
+            <b>Analyse en cours.</b> Nous rassemblons la presse et les vidéos de la semaine sur {name}, puis l&apos;IA
+            les classe. Comptez quelques minutes : la page se met à jour toute seule.
+            <AutoRefresh seconds={20} />
+          </div>
+        ) : rows.length === 0 ? (
           <div className="empty">Aucun article classé sur cette période. La collecte tourne plusieurs fois par jour.</div>
         ) : view === "egal" ? (
           <EqualView rows={rows} />
@@ -138,7 +155,7 @@ type Rows = Awaited<ReturnType<typeof getFeed>>;
 function toVideo(r: Rows[number]): VideoData {
   return {
     videoId: r.video_id!,
-    title: r.title,
+    title: r.title_fr || r.title,
     channel: r.source_name,
     views: r.views ?? 0,
     thumbnail: r.thumbnail ?? `/api/thumb/${r.video_id}`,
@@ -271,7 +288,7 @@ function ArgumentList({ title, items, cls }: { title: string; items: ReturnType<
               <span className="muted small">({a.count} articles)</span>
               <br />
               <a href={a.example.url} target="_blank" rel="noopener noreferrer">
-                {a.example.summary_fr || a.example.title}
+                {a.example.summary_fr || a.example.title_fr || a.example.title}
               </a>
             </li>
           ))}

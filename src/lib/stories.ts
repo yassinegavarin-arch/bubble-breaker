@@ -56,8 +56,13 @@ function percentiles(values: number[]): number[] {
  * 1. Rattache chaque nouvel article à un fait existant ou en crée un.
  * 2. Recalcule les compteurs et le score de viralité des faits des 7 derniers jours.
  */
-export async function updateStories(db: SupabaseClient): Promise<{ assigned: number; created: number; scored: number }> {
-  const { data: people, error } = await db.from("personalities").select("id, search_terms").eq("active", true);
+export async function updateStories(
+  db: SupabaseClient,
+  onlyIds?: number[],
+): Promise<{ assigned: number; created: number; scored: number }> {
+  let query = db.from("personalities").select("id, search_terms").eq("active", true);
+  if (onlyIds) query = query.in("id", onlyIds);
+  const { data: people, error } = await query;
   if (error) throw error;
 
   let assigned = 0;

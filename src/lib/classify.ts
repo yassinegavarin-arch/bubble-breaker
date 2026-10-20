@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { ARGUMENTS, STANCES, displayName, type Stance } from "./types";
 
-export const PROMPT_VERSION = "v2";
+export const PROMPT_VERSION = "v3";
 const CHUNK = 10;
 /** Appels IA simultanés (le quota gratuit tolère une dizaine de requêtes par minute). */
 const PARALLEL = 4;
@@ -23,6 +23,7 @@ interface Verdict {
   argument: string;
   justification: string;
   summary_fr: string;
+  title_fr: string;
 }
 
 const SYSTEM = `Tu es un analyste politique strictement neutre. Pour chaque article, tu indiques si son contenu présente la personnalité visée sous un jour favorable ou défavorable.
@@ -48,8 +49,9 @@ Exemples :
 - argument : une seule valeur parmi ${ARGUMENTS.join(", ")}.
 - justification : une phrase factuelle en français, 25 mots maximum.
 - summary_fr : résumé de l'article en une ligne en français, 20 mots maximum.
+- title_fr : le titre traduit fidèlement en français, sans rien ajouter ; recopie-le à l'identique s'il est déjà en français.
 
-Réponds uniquement par un tableau JSON, un objet par article, avec les clés : id, stance, confidence, satire, argument, justification, summary_fr.`;
+Réponds uniquement par un tableau JSON, un objet par article, avec les clés : id, stance, confidence, satire, argument, justification, summary_fr, title_fr.`;
 
 function buildPrompt(items: Todo[]): string {
   const lines = items.map((t, i) => {
@@ -167,6 +169,7 @@ function parseVerdicts(raw: string, count: number): Map<number, Verdict> {
       argument: (ARGUMENTS as readonly string[]).includes(String(v.argument)) ? String(v.argument) : "autre",
       justification: String(v.justification ?? "").slice(0, 300),
       summary_fr: String(v.summary_fr ?? "").slice(0, 250),
+      title_fr: String(v.title_fr ?? "").trim().slice(0, 300),
     });
   }
   return out;
@@ -177,22 +180,23 @@ export async function classifyPending(
   db: SupabaseClient,
   deadline: number,
   maxItems?: number,
+  personalityId?: number,
 ): Promise<{ classified: number; failed: number; provider: string; lastError?: string }> {
   const provider = process.env.LLM_PROVIDER === "anthropic" ? "anthropic" : "gemini";
   const limit = maxItems ?? (Number(process.env.CLASSIFY_BATCH) || 25);
   let lastError: string | undefined;
   const model = process.env.LLM_MODEL || (provider === "anthropic" ? "claude-haiku-5-5" : "gemini-3.8-flash");
 
-  const { data, error } = await db
+  let query = db
     .from("mentions")
     .select(
       "article_id, personality_id, articles!inner(title, excerpt, source_name, published_at), personalities!inner(first_name, last_name, role)",
     )
     // En attente : jamais classés, ou classés avec une ancienne version de la consigne.
     .or(`classified_at.is.null,prompt_version.neq.${PROMPT_VERSION}`)
-    .is("error", null)
-    .order("articles(published_at)", { ascending: false })
-    .limit(Math.max(limit * 5, 300));
+    .is("error", null);
+  if (personalityId) query = query.eq("personality_id", personalityId);
+  const { data, error } = await query.order("articles(published_at)", { ascending: false }).limit(Math.max(limit * 5, 300));
   if (error) throw error;
 
   // Répartition équitable entre personnalités : on prend à tour de rôle le plus récent de chacune.
@@ -243,6 +247,13 @@ export async function classifyPending(
     });
     const { error: e2 } = await db.from("mentions").upsert(rows, { onConflict: "article_id,personality_id" });
     if (e2) throw e2;
+    // Titre en français, partagé par toutes les personnalités qui citent l'article.
+    await Promise.all(
+      chunk.map((t, j) => {
+        const v = verdicts.get(j);
+        return v?.title_fr ? db.from("articles").update({ title_fr: v.title_fr }).eq("id", t.article_id) : null;
+      }),
+    );
   }
 
   const chunks: Todo[][] = [];

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 /** Fait apparaître son contenu en fondu quand il entre à l'écran. */
@@ -302,4 +303,180 @@ export function VideoCard({ v, side }: { v: VideoData; side: "plus" | "minus" })
       </figcaption>
     </figure>
   );
+}
+
+interface Hit {
+  wiki: string;
+  label: string;
+  description: string | null;
+  thumb: string | null;
+  slug: string | null;
+}
+
+/**
+ * Recherche de n'importe quelle personnalité publique. Les suggestions viennent de Wikipédia :
+ * une personne sans article (particulier) n'apparaît jamais.
+ */
+export function SearchBox({ autoFocus = false, onDone, variant = "hero" }: { autoFocus?: boolean; onDone?: () => void; variant?: "hero" | "overlay" }) {
+  const router = useRouter();
+  const [q, setQ] = useState("");
+  const [hits, setHits] = useState<Hit[]>([]);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [active, setActive] = useState(0);
+
+  useEffect(() => {
+    const query = q.trim();
+    if (query.length < 2) {
+      setHits([]);
+      return;
+    }
+    setLoading(true);
+    const ctrl = new AbortController();
+    const t = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`, { signal: ctrl.signal });
+        const json = (await res.json()) as { hits: Hit[] };
+        setHits(json.hits ?? []);
+        setActive(0);
+        setOpen(true);
+      } catch {
+        // Requête annulée ou réseau indisponible.
+      } finally {
+        setLoading(false);
+      }
+    }, 280);
+    return () => {
+      clearTimeout(t);
+      ctrl.abort();
+    };
+  }, [q]);
+
+  async function choose(h: Hit) {
+    setError(null);
+    if (h.slug) {
+      onDone?.();
+      router.push(`/p/${h.slug}`);
+      return;
+    }
+    setBusy(h.wiki);
+    try {
+      const res = await fetch("/api/personalities", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ wiki: h.wiki }),
+      });
+      const json = (await res.json()) as { slug?: string; error?: string };
+      if (!res.ok || !json.slug) throw new Error(json.error ?? "Création impossible");
+      onDone?.();
+      router.push(`/p/${json.slug}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Création impossible");
+      setBusy(null);
+    }
+  }
+
+  return (
+    <div className={`search ${variant === "hero" ? "search-hero" : "search-overlay-box"}`}>
+      <div className="search-field">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="7" />
+          <path d="M20 20l-3.5-3.5" />
+        </svg>
+        <input
+          type="search"
+          value={q}
+          autoFocus={autoFocus}
+          placeholder="Chercher une personnalité publique…"
+          aria-label="Chercher une personnalité publique"
+          onChange={(e) => setQ(e.target.value)}
+          onFocus={() => hits.length && setOpen(true)}
+          onKeyDown={(e) => {
+            if (e.key === "ArrowDown") setActive((a) => Math.min(a + 1, hits.length - 1));
+            if (e.key === "ArrowUp") setActive((a) => Math.max(a - 1, 0));
+            if (e.key === "Enter" && hits[active]) choose(hits[active]);
+            if (e.key === "Escape") setOpen(false);
+          }}
+        />
+        {loading && <span className="spinner" aria-hidden="true" />}
+      </div>
+      {open && q.trim().length >= 2 && (
+        <div className="search-results" role="listbox">
+          {hits.length === 0 && !loading && (
+            <p className="search-empty">
+              Aucune personnalité publique trouvée. Seules les personnes disposant d&apos;un article Wikipédia peuvent être
+              recherchées.
+            </p>
+          )}
+          {hits.map((h, i) => (
+            <button
+              key={h.wiki}
+              type="button"
+              role="option"
+              aria-selected={i === active}
+              className={`hit${i === active ? " on" : ""}`}
+              onMouseEnter={() => setActive(i)}
+              onClick={() => choose(h)}
+              disabled={busy != null}
+            >
+              {h.thumb ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={h.thumb} alt="" />
+              ) : (
+                <span className="hit-initial">{h.label[0]}</span>
+              )}
+              <span className="hit-text">
+                <b>{h.label}</b>
+                {h.description && <small>{h.description}</small>}
+              </span>
+              <span className={`hit-tag${h.slug ? " known" : ""}`}>
+                {busy === h.wiki ? "Création…" : h.slug ? "Voir la fiche" : "Créer la fiche"}
+              </span>
+            </button>
+          ))}
+          {error && <p className="search-error">{error}</p>}
+          <p className="search-note">Source : Wikipédia. Les particuliers ne peuvent pas être recherchés.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Bouton loupe de l'en-tête : ouvre la recherche en surimpression. */
+export function HeaderSearch() {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+  return (
+    <>
+      <button type="button" className="search-trigger" onClick={() => setOpen(true)} aria-label="Rechercher une personnalité">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+          <circle cx="11" cy="11" r="7" />
+          <path d="M20 20l-3.5-3.5" />
+        </svg>
+      </button>
+      {open && (
+        <div className="search-overlay" onClick={() => setOpen(false)}>
+          <div className="search-panel" onClick={(e) => e.stopPropagation()}>
+            <SearchBox autoFocus variant="overlay" onDone={() => setOpen(false)} />
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+/** Recharge la page à intervalle régulier tant qu'une analyse est en cours. */
+export function AutoRefresh({ seconds = 15 }: { seconds?: number }) {
+  const router = useRouter();
+  useEffect(() => {
+    const t = setInterval(() => router.refresh(), seconds * 1000);
+    return () => clearInterval(t);
+  }, [router, seconds]);
+  return null;
 }

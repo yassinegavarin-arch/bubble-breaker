@@ -44,6 +44,11 @@ export default function Conditions() {
         Il est interdit de perturber le fonctionnement du site, d&apos;en extraire massivement les données par des
         moyens automatisés, ou d&apos;utiliser les signalements pour harceler ou diffamer.
       </p>
+      <p>
+        La recherche est réservée aux personnalités publiques disposant d&apos;un article Wikipédia. Elle ne doit pas
+        servir à surveiller une personne. Toute personne concernée peut demander le retrait de sa fiche à{" "}
+        <a href="mailto:yassine.gavarin@gmail.com">yassine.gavarin@gmail.com</a>.
+      </p>
 
       <h2>6. Responsabilité</h2>
       <p>

@@ -36,7 +36,7 @@ export function storyCards(rows: FeedRow[], stance: Stance, onlySocial = false):
     const leanings = LEANINGS.filter((l) => list.some((r) => r.leaning === l));
     return {
       key,
-      headline: lead.title,
+      headline: lead.title_fr || lead.title,
       url: lead.url,
       summary: lead.summary_fr,
       justification: lead.justification,
@@ -47,10 +47,10 @@ export function storyCards(rows: FeedRow[], stance: Stance, onlySocial = false):
       isViral: Boolean(lead.is_viral),
       social: list.some((r) => r.social || isSocial(r.title, r.domain)),
       firstSeen: sorted[0].published_at,
-      articles: sorted.map(({ article_id, url, title, source_name, leaning, published_at }) => ({
+      articles: sorted.map(({ article_id, url, title, title_fr, source_name, leaning, published_at }) => ({
         article_id,
         url,
-        title,
+        title: title_fr || title,
         source_name,
         leaning,
         published_at,
