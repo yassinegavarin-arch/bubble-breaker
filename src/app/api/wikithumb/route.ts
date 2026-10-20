@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
   } catch {
     return new NextResponse(null, { status: 400 });
   }
-  if (url.protocol !== "https:" || url.hostname !== "upload.wikimedia.org") return new NextResponse(null, { status: 400 });
+  if (url.protocol !== "https:" || !["upload.wikimedia.org", "thumb.wikimedia.org"].includes(url.hostname)) return new NextResponse(null, { status: 400 });
   const res = await fetch(url, { headers: { "User-Agent": WIKI_UA }, signal: AbortSignal.timeout(6000) }).catch(() => null);
   const type = res?.headers.get("content-type") ?? "";
   if (!res?.ok || !type.startsWith("image/")) return new NextResponse(null, { status: 404 });

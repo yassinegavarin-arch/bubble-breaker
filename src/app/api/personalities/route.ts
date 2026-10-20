@@ -32,9 +32,19 @@ export async function POST(req: NextRequest) {
   }
 
   const db = adminClient();
-  const { data: existing } = await db.from("personalities").select("slug, active").eq("wikidata", person.wikidata).maybeSingle();
+  // Déjà suivie (liste choisie ou recherche précédente) : identifiant Wikidata ou titre d'article.
+  const titles = Array.from(new Set([wiki, person.wiki].map((t) => `"${t.replace(/"/g, "")}"`)));
+  const { data: matches } = await db
+    .from("personalities")
+    .select("slug, active, wikidata")
+    .or(`wikidata.eq.${person.wikidata},wiki.in.(${titles.join(",")})`)
+    .limit(1);
+  const existing = matches?.[0];
   if (existing) {
-    if (!existing.active) await db.from("personalities").update({ active: true }).eq("slug", existing.slug);
+    const patch: Record<string, unknown> = {};
+    if (!existing.active) patch.active = true;
+    if (!existing.wikidata) patch.wikidata = person.wikidata;
+    if (Object.keys(patch).length) await db.from("personalities").update(patch).eq("slug", existing.slug);
     return NextResponse.json({ slug: existing.slug, created: false });
   }
 
