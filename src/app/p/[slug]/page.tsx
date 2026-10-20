@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { FLAGS } from "@/data/personalities";
+import { COUNTRIES } from "@/data/personalities";
 import { balance, storyCards, thermometer, topArguments } from "@/lib/analysis";
 import { getPortrait } from "@/lib/portraits";
 import { getFeed, getPersonality } from "@/lib/queries";
@@ -61,7 +61,7 @@ export default async function PersonalityPage({ params, searchParams }: Props) {
             <div>
               <h1>{name}</h1>
               <div className="role">
-                {FLAGS[p.country] ?? ""} {p.role}
+                {COUNTRIES[p.country] ?? p.country} · {p.role}
               </div>
               {portrait && (
                 <a className="credit" style={{ color: "rgba(255,255,255,0.55)" }} href={portrait.credit} target="_blank" rel="noopener noreferrer">

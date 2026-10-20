@@ -42,14 +42,14 @@ export const PERSONALITIES: PersonalityDef[] = [
   { slug: "friedrich-merz", first_name: "Friedrich", last_name: "MERZ", country: "DE", role: "Chancelier fédéral allemand", search_terms: ["Merz"], news_editions: ["fr", "de"], wiki: "Friedrich_Merz" },
 ];
 
-export const FLAGS: Record<string, string> = {
-  FR: "🇫🇷",
-  US: "🇺🇸",
-  BR: "🇧🇷",
-  AR: "🇦🇷",
-  IT: "🇮🇹",
-  UA: "🇺🇦",
-  RU: "🇷🇺",
-  GB: "🇬🇧",
-  DE: "🇩🇪",
+export const COUNTRIES: Record<string, string> = {
+  FR: "France",
+  US: "États-Unis",
+  BR: "Brésil",
+  AR: "Argentine",
+  IT: "Italie",
+  UA: "Ukraine",
+  RU: "Russie",
+  GB: "Royaume-Uni",
+  DE: "Allemagne",
 };

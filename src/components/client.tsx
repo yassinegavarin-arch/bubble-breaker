@@ -121,7 +121,6 @@ export interface FlipCardData {
   slug: string;
   name: string;
   role: string;
-  flag: string;
   country: string;
   photo: string | null;
   credit: string | null;
@@ -169,9 +168,7 @@ export function FlipCard({ d, delay = 0 }: { d: FlipCardData; delay?: number }) 
             )}
             <div className="shade" />
             <div className="top">
-              <span className="chip-glass">
-                {d.flag} {d.country}
-              </span>
+              <span className="chip-glass">{d.country}</span>
               <span className="turn" title="Retourner">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                   <path d="M3 12a9 9 0 0 1 15.5-6.2L21 8M21 3v5h-5M21 12a9 9 0 0 1-15.5 6.2L3 16M3 21v-5h5" />
@@ -230,7 +227,7 @@ export function FlipCard({ d, delay = 0 }: { d: FlipCardData; delay?: number }) 
             <Link href={`/p/${d.slug}?vue=egal`} className="choice equal" onClick={stop}>
               <span className="sym">=</span>
               <span>
-                <b>L&apos;écart entre les bulles</b>
+                <b>L&apos;écart</b>
                 <small>{d.gap != null ? `${d.gap} points d'écart` : `${total} articles analysés`}</small>
               </span>
             </Link>

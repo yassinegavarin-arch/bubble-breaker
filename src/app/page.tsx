@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FLAGS, PERSONALITIES } from "@/data/personalities";
+import { COUNTRIES, PERSONALITIES } from "@/data/personalities";
 import { balance, thermometer } from "@/lib/analysis";
 import { getPortraits } from "@/lib/portraits";
 import { getCounts, getLastUpdate, getOverview, getPersonalities } from "@/lib/queries";
@@ -41,8 +41,7 @@ export default async function Home() {
       slug: p.slug,
       name: displayName(p),
       role: p.role ?? "",
-      flag: FLAGS[p.country] ?? "",
-      country: p.country,
+      country: COUNTRIES[p.country] ?? p.country,
       photo: portrait?.src ?? null,
       credit: portrait?.credit ?? null,
       initials: `${p.first_name?.[0] ?? ""}${p.last_name[0]}`,
