@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
     const elapsed =
-      step === "all" ? await minutesSince(db, "sources", "last_ok_at") : await minutesSince(db, "mentions", "classified_at");
+      step === "all" ? await minutesSince(db, "articles", "fetched_at") : await minutesSince(db, "mentions", "classified_at");
     const cooldown = step === "all" ? COOLDOWN_ALL_MIN : COOLDOWN_CLASSIFY_MIN;
     if (elapsed < cooldown) {
       return NextResponse.json(
@@ -60,6 +60,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(result);
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ ...result, error: String(err) }, { status: 500 });
+    const e = err as { message?: string; details?: string; hint?: string; code?: string };
+    const message = e?.message ? [e.code, e.message, e.details, e.hint].filter(Boolean).join(" | ") : String(err);
+    return NextResponse.json({ ...result, error: message }, { status: 500 });
   }
 }

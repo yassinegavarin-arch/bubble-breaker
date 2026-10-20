@@ -1,30 +1,24 @@
-# Déclenche la collecte toutes les 3 heures (l'offre gratuite de Vercel limite ses tâches planifiées à une par jour).
-# Secrets à créer dans GitHub > Settings > Secrets and variables > Actions :
-#   APP_URL      ex : https://bubble-breaker.vercel.app
-#   CRON_SECRET  la même valeur que dans Vercel
+# Déclenche la collecte toutes les 3 heures et le classement IA toutes les heures.
+# Aucun secret nécessaire : l'application impose elle-même un délai minimum entre deux exécutions.
 name: Collecte
 
 on:
   schedule:
-    - cron: "23 */3 * * *"
+    - cron: "23 */3 * * *"   # collecte complète
+    - cron: "53 * * * *"     # classement des articles en attente
   workflow_dispatch:
+
+env:
+  APP_URL: https://bubble-breaker-psi.vercel.app
 
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 3
     steps:
-      - name: Collecte, regroupement et classement
-        env:
-          APP_URL: ${{ secrets.APP_URL }}
-          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+      - name: Appel de l'application
         run: |
-          if [ -z "$APP_URL" ] || [ -z "$CRON_SECRET" ]; then
-            echo "Secrets APP_URL et CRON_SECRET non configurés : rien à faire."
-            exit 0
-          fi
-          curl --fail-with-body -sS -m 90 -H "Authorization: Bearer $CRON_SECRET" "$APP_URL/api/cron?step=all"
-          # Deux passes de classement supplémentaires pour vider la file d'attente
-          for i in 1 2; do
-            curl -sS -m 90 -H "Authorization: Bearer $CRON_SECRET" "$APP_URL/api/cron?step=classify" || true
-          done
+          STEP=all
+          if [ "${{ github.event.schedule }}" = "53 * * * *" ]; then STEP=classify; fi
+          echo "Étape : $STEP"
+          curl -sS -m 90 "$APP_URL/api/cron?step=$STEP" || true

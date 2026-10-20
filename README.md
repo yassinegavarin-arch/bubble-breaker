@@ -50,7 +50,7 @@ Créer une clé gratuite sur [aistudio.google.com](https://aistudio.google.com) 
 Dans un terminal, ou via un outil comme Hoppscotch :
 
 ```bash
-curl -H "Authorization: Bearer VOTRE_CRON_SECRET" "https://VOTRE-APP.vercel.app/api/cron?step=all"
+curl "https://bubble-breaker-psi.vercel.app/api/cron?step=all"
 ```
 
 ### 5. Collecte toutes les 3 heures (facultatif)
