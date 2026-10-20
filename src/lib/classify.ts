@@ -54,9 +54,12 @@ function buildPrompt(items: Todo[]): string {
 /** Modèles essayés dans l'ordre : le principal, puis un modèle de secours si le premier est surchargé. */
 function geminiModels(): string[] {
   const primary = process.env.LLM_MODEL || "gemini-3.8-flash";
-  const fallback = process.env.LLM_FALLBACK_MODEL || "gemini-2.5-flash";
-  return primary === fallback ? [primary] : [primary, fallback];
+  const fallbacks = (process.env.LLM_FALLBACK_MODEL || "gemini-3.5-flash-lite,gemini-3.5-flash").split(",").map((m) => m.trim());
+  return Array.from(new Set([primary, ...fallbacks].filter((m) => m && !unavailable.has(m))));
 }
+
+/** Modèles indisponibles pour ce compte (404) : on ne les réessaie plus pendant l'exécution. */
+const unavailable = new Set<string>();
 
 /** Modèles qui refusent le réglage de réflexion réduite. */
 const noThinkingConfig = new Set<string>();
@@ -87,6 +90,10 @@ async function callGemini(prompt: string): Promise<string> {
         }
       }
       lastErr = err;
+      if (/HTTP 404/.test(String(err))) {
+        unavailable.add(model);
+        continue;
+      }
       if (!isTransient(err)) throw err;
     }
   }
