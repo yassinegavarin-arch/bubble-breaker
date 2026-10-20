@@ -12,8 +12,9 @@ export default async function Methode() {
   const sources: Source[] = isConfigured() ? await getSources() : [];
 
   return (
-    <>
-      <h1>Méthode</h1>
+    <div className="wrap prose">
+      <span className="kicker">Transparence</span>
+      <h1>La méthode</h1>
       <p className="lead">
         La même règle s&apos;applique à toutes les personnalités et à tous les médias. Tout est public, y compris les
         limites.
@@ -70,7 +71,10 @@ export default async function Methode() {
           <tbody>
             {LEANINGS.map((l) => (
               <tr key={l}>
-                <td>{l}</td>
+                <td style={{ whiteSpace: "nowrap" }}>
+                  <span className={`dot ${l}`} style={{ display: "inline-block", marginRight: 8 }} />
+                  {l}
+                </td>
                 <td>
                   {Array.from(new Set(sources.filter((s) => s.leaning === l).map((s) => `${s.name} (${s.country})`))).join(", ")}
                 </td>
@@ -79,6 +83,6 @@ export default async function Methode() {
           </tbody>
         </table>
       )}
-    </>
+    </div>
   );
 }

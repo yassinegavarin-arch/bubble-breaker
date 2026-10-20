@@ -64,3 +64,15 @@ export async function getLastUpdate(): Promise<string | null> {
     .maybeSingle();
   return data?.fetched_at ?? null;
 }
+
+/** Chiffres clés pour l'accueil : articles collectés sur 7 jours, articles classés, médias suivis. */
+export async function getCounts(): Promise<{ articles: number; classified: number; sources: number }> {
+  const db = publicClient();
+  const since = sinceIso(7 * 24);
+  const [a, c, s] = await Promise.all([
+    db.from("articles").select("id", { count: "exact", head: true }).gte("published_at", since),
+    db.from("mentions").select("article_id", { count: "exact", head: true }).not("classified_at", "is", null),
+    db.from("sources").select("id", { count: "exact", head: true }).eq("active", true),
+  ]);
+  return { articles: a.count ?? 0, classified: c.count ?? 0, sources: s.count ?? 0 };
+}
