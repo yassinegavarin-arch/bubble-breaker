@@ -51,41 +51,62 @@ function buildPrompt(items: Todo[]): string {
   return `Classe ces ${items.length} articles.\n\n${lines.join("\n\n")}`;
 }
 
-/** Réflexion réduite : la classification n'en a pas besoin et cela divise le temps de réponse. */
-let lowThinking = true;
-
-async function callGemini(prompt: string): Promise<string> {
-  try {
-    return await callGeminiOnce(prompt);
-  } catch (err) {
-    // Modèle qui ne reconnaît pas le réglage de réflexion : on réessaie sans.
-    if (lowThinking && /HTTP 400/.test(String(err)) && /thinking/i.test(String(err))) {
-      lowThinking = false;
-      return callGeminiOnce(prompt);
-    }
-    throw err;
-  }
+/** Modèles essayés dans l'ordre : le principal, puis un modèle de secours si le premier est surchargé. */
+function geminiModels(): string[] {
+  const primary = process.env.LLM_MODEL || "gemini-3.8-flash";
+  const fallback = process.env.LLM_FALLBACK_MODEL || "gemini-2.5-flash";
+  return primary === fallback ? [primary] : [primary, fallback];
 }
 
-async function callGeminiOnce(prompt: string): Promise<string> {
+/** Modèles qui refusent le réglage de réflexion réduite. */
+const noThinkingConfig = new Set<string>();
+
+function thinkingConfig(model: string) {
+  if (noThinkingConfig.has(model)) return {};
+  // Réflexion réduite : inutile pour classer, et cela divise le temps de réponse.
+  return /gemini-2\./.test(model) ? { thinkingConfig: { thinkingBudget: 0 } } : { thinkingConfig: { thinkingLevel: "low" } };
+}
+
+/** Erreur passagère (surcharge, quota par minute, délai dépassé) : on peut réessayer ailleurs ou plus tard. */
+export function isTransient(err: unknown): boolean {
+  return /HTTP (429|500|502|503|504)|TimeoutError|aborted|fetch failed/i.test(String(err));
+}
+
+async function callGemini(prompt: string): Promise<string> {
+  let lastErr: unknown;
+  for (const model of geminiModels()) {
+    try {
+      return await callGeminiOnce(prompt, model);
+    } catch (err) {
+      if (/HTTP 400/.test(String(err)) && /thinking/i.test(String(err)) && !noThinkingConfig.has(model)) {
+        noThinkingConfig.add(model);
+        try {
+          return await callGeminiOnce(prompt, model);
+        } catch (err2) {
+          err = err2;
+        }
+      }
+      lastErr = err;
+      if (!isTransient(err)) throw err;
+    }
+  }
+  throw lastErr;
+}
+
+async function callGeminiOnce(prompt: string, model: string): Promise<string> {
   const key = process.env.GEMINI_API_KEY;
   if (!key) throw new Error("GEMINI_API_KEY manquante");
-  const model = process.env.LLM_MODEL || "gemini-3.8-flash";
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-goog-api-key": key },
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: SYSTEM }] },
       contents: [{ role: "user", parts: [{ text: prompt }] }],
-      generationConfig: {
-        temperature: 0,
-        responseMimeType: "application/json",
-        ...(lowThinking ? { thinkingConfig: { thinkingLevel: "low" } } : {}),
-      },
+      generationConfig: { temperature: 0, responseMimeType: "application/json", ...thinkingConfig(model) },
     }),
     signal: AbortSignal.timeout(CALL_TIMEOUT_MS),
   });
-  if (!res.ok) throw new Error(`Gemini HTTP ${res.status} : ${(await res.text()).slice(0, 200)}`);
+  if (!res.ok) throw new Error(`Gemini ${model} HTTP ${res.status} : ${(await res.text()).slice(0, 200)}`);
   const json = await res.json();
   return json?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? "").join("") ?? "";
 }
@@ -213,12 +234,14 @@ export async function classifyPending(
   for (let i = 0; i < chunks.length; i += PARALLEL) {
     if (deadline - Date.now() < CALL_TIMEOUT_MS + 3_000) break;
     const results = await Promise.allSettled(chunks.slice(i, i + PARALLEL).map(handle));
-    const rejected = results.find((r): r is PromiseRejectedResult => r.status === "rejected");
-    if (rejected) {
-      // Quota atteint ou panne : on s'arrête, les articles restent en attente pour la prochaine exécution.
-      console.error("Classification interrompue :", rejected.reason);
-      lastError = String(rejected.reason).slice(0, 300);
-      break;
+    const rejected = results.filter((r): r is PromiseRejectedResult => r.status === "rejected");
+    if (rejected.length > 0) {
+      lastError = String(rejected[0].reason).slice(0, 300);
+      console.error("Lot non classé :", rejected[0].reason);
+      // Erreur durable (clé invalide, crédits, requête refusée) : inutile d'insister.
+      if (rejected.some((r) => !isTransient(r.reason))) break;
+      // Tout a échoué par surcharge : on laisse souffler l'API avant la vague suivante.
+      if (rejected.length === results.length) await new Promise((r) => setTimeout(r, 10_000));
     }
   }
 
