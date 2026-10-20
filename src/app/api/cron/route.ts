@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
     if (step === "all" || step === "collect") result.collect = await collect(db);
     if (step === "all" || step === "stories") result.stories = await updateStories(db);
     if ((step === "all" || step === "classify") && Date.now() < deadline) {
-      result.classify = await classifyPending(db, deadline, step === "classify" ? 400 : undefined);
+      result.classify = await classifyPending(db, deadline, step === "classify" ? 600 : undefined);
     }
     result.seconds = Math.round((Date.now() - started) / 100) / 10;
     return NextResponse.json(result);
