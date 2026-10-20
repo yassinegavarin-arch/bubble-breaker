@@ -2,7 +2,11 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { ARGUMENTS, STANCES, displayName, type Stance } from "./types";
 
 export const PROMPT_VERSION = "v1";
-const CHUNK = 10;
+const CHUNK = 20;
+/** Appels IA simultanés (le quota gratuit tolère une dizaine de requêtes par minute). */
+const PARALLEL = 3;
+/** Durée maximale d'un appel IA. */
+const CALL_TIMEOUT_MS = 28_000;
 
 interface Todo {
   article_id: number;
@@ -59,7 +63,7 @@ async function callGemini(prompt: string): Promise<string> {
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       generationConfig: { temperature: 0, responseMimeType: "application/json" },
     }),
-    signal: AbortSignal.timeout(45_000),
+    signal: AbortSignal.timeout(CALL_TIMEOUT_MS),
   });
   if (!res.ok) throw new Error(`Gemini HTTP ${res.status} : ${(await res.text()).slice(0, 200)}`);
   const json = await res.json();
@@ -80,7 +84,7 @@ async function callAnthropic(prompt: string): Promise<string> {
       system: SYSTEM,
       messages: [{ role: "user", content: prompt }],
     }),
-    signal: AbortSignal.timeout(45_000),
+    signal: AbortSignal.timeout(CALL_TIMEOUT_MS),
   });
   if (!res.ok) throw new Error(`Anthropic HTTP ${res.status} : ${(await res.text()).slice(0, 200)}`);
   const json = await res.json();
@@ -129,48 +133,71 @@ export async function classifyPending(
     .is("classified_at", null)
     .is("error", null)
     .order("articles(published_at)", { ascending: false })
-    .limit(limit);
+    .limit(Math.max(limit * 5, 300));
   if (error) throw error;
 
-  const todo = (data ?? []) as unknown as Todo[];
+  // Répartition équitable entre personnalités : on prend à tour de rôle le plus récent de chacune.
+  const queues = new Map<number, Todo[]>();
+  for (const t of (data ?? []) as unknown as Todo[]) {
+    const q = queues.get(t.personality_id) ?? [];
+    q.push(t);
+    queues.set(t.personality_id, q);
+  }
+  const todo: Todo[] = [];
+  while (todo.length < limit && queues.size > 0) {
+    for (const [pid, q] of queues) {
+      const next = q.shift();
+      if (next) todo.push(next);
+      if (q.length === 0) queues.delete(pid);
+      if (todo.length >= limit) break;
+    }
+  }
+
   let classified = 0;
   let failed = 0;
 
-  for (let i = 0; i < todo.length; i += CHUNK) {
-    if (Date.now() > deadline) break;
-    const chunk = todo.slice(i, i + CHUNK);
-    try {
-      const raw = provider === "anthropic" ? await callAnthropic(buildPrompt(chunk)) : await callGemini(buildPrompt(chunk));
-      const verdicts = parseVerdicts(raw, chunk.length);
-      const now = new Date().toISOString();
-      const rows = chunk.map((t, j) => {
-        const v = verdicts.get(j);
-        if (!v) {
-          failed++;
-          return { article_id: t.article_id, personality_id: t.personality_id, error: "absent de la réponse IA" };
-        }
-        classified++;
-        return {
-          article_id: t.article_id,
-          personality_id: t.personality_id,
-          stance: v.stance,
-          confidence: v.confidence,
-          satire: v.satire,
-          argument: v.argument,
-          justification: v.justification,
-          summary_fr: v.summary_fr,
-          model,
-          prompt_version: PROMPT_VERSION,
-          classified_at: now,
-          error: null,
-        };
-      });
-      const { error: e2 } = await db.from("mentions").upsert(rows, { onConflict: "article_id,personality_id" });
-      if (e2) throw e2;
-    } catch (err) {
+  async function handle(chunk: Todo[]) {
+    const raw = provider === "anthropic" ? await callAnthropic(buildPrompt(chunk)) : await callGemini(buildPrompt(chunk));
+    const verdicts = parseVerdicts(raw, chunk.length);
+    const now = new Date().toISOString();
+    const rows = chunk.map((t, j) => {
+      const v = verdicts.get(j);
+      if (!v) {
+        failed++;
+        return { article_id: t.article_id, personality_id: t.personality_id, error: "absent de la réponse IA" };
+      }
+      classified++;
+      return {
+        article_id: t.article_id,
+        personality_id: t.personality_id,
+        stance: v.stance,
+        confidence: v.confidence,
+        satire: v.satire,
+        argument: v.argument,
+        justification: v.justification,
+        summary_fr: v.summary_fr,
+        model,
+        prompt_version: PROMPT_VERSION,
+        classified_at: now,
+        error: null,
+      };
+    });
+    const { error: e2 } = await db.from("mentions").upsert(rows, { onConflict: "article_id,personality_id" });
+    if (e2) throw e2;
+  }
+
+  const chunks: Todo[][] = [];
+  for (let i = 0; i < todo.length; i += CHUNK) chunks.push(todo.slice(i, i + CHUNK));
+
+  // Par vagues d'appels parallèles, sans en lancer une qui dépasserait l'échéance.
+  for (let i = 0; i < chunks.length; i += PARALLEL) {
+    if (deadline - Date.now() < CALL_TIMEOUT_MS + 3_000) break;
+    const results = await Promise.allSettled(chunks.slice(i, i + PARALLEL).map(handle));
+    const rejected = results.find((r): r is PromiseRejectedResult => r.status === "rejected");
+    if (rejected) {
       // Quota atteint ou panne : on s'arrête, les articles restent en attente pour la prochaine exécution.
-      console.error("Classification interrompue :", err);
-      lastError = String(err).slice(0, 300);
+      console.error("Classification interrompue :", rejected.reason);
+      lastError = String(rejected.reason).slice(0, 300);
       break;
     }
   }

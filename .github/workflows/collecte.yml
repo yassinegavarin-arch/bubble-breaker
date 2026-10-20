@@ -1,11 +1,11 @@
-# Déclenche la collecte toutes les 3 heures et le classement IA toutes les heures.
+# Déclenche la collecte toutes les 3 heures et le classement IA toutes les 30 minutes.
 # Aucun secret nécessaire : l'application impose elle-même un délai minimum entre deux exécutions.
 name: Collecte
 
 on:
   schedule:
     - cron: "23 */3 * * *"   # collecte complète
-    - cron: "53 * * * *"     # classement des articles en attente
+    - cron: "8,38 * * * *"   # classement des articles en attente (toutes les 30 min)
   workflow_dispatch:
 
 env:
@@ -19,6 +19,6 @@ jobs:
       - name: Appel de l'application
         run: |
           STEP=all
-          if [ "${{ github.event.schedule }}" = "53 * * * *" ]; then STEP=classify; fi
+          if [ "${{ github.event.schedule }}" = "8,38 * * * *" ]; then STEP=classify; fi
           echo "Étape : $STEP"
           curl -sS -m 90 "$APP_URL/api/cron?step=$STEP" || true

@@ -72,10 +72,7 @@ export default async function Methode() {
               <tr key={l}>
                 <td>{l}</td>
                 <td>
-                  {sources
-                    .filter((s) => s.leaning === l)
-                    .map((s) => `${s.name} (${s.country})`)
-                    .join(", ")}
+                  {Array.from(new Set(sources.filter((s) => s.leaning === l).map((s) => `${s.name} (${s.country})`))).join(", ")}
                 </td>
               </tr>
             ))}
