@@ -50,7 +50,7 @@ function buildPrompt(items: Todo[]): string {
 async function callGemini(prompt: string): Promise<string> {
   const key = process.env.GEMINI_API_KEY;
   if (!key) throw new Error("GEMINI_API_KEY manquante");
-  const model = process.env.LLM_MODEL || "gemini-2.5-flash";
+  const model = process.env.LLM_MODEL || "gemini-3.8-flash";
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-goog-api-key": key },
@@ -117,7 +117,7 @@ export async function classifyPending(
 ): Promise<{ classified: number; failed: number; provider: string }> {
   const provider = process.env.LLM_PROVIDER === "anthropic" ? "anthropic" : "gemini";
   const limit = Number(process.env.CLASSIFY_BATCH) || 25;
-  const model = process.env.LLM_MODEL || (provider === "anthropic" ? "claude-haiku-5-5" : "gemini-2.5-flash");
+  const model = process.env.LLM_MODEL || (provider === "anthropic" ? "claude-haiku-5-5" : "gemini-3.8-flash");
 
   const { data, error } = await db
     .from("mentions")

@@ -25,7 +25,7 @@ Technologies : Next.js sur Vercel, base Supabase (Postgres), IA Gemini (offre gr
 
 ### 2. Clé IA
 
-Créer une clé gratuite sur [aistudio.google.com](https://aistudio.google.com) (bouton « Get API key »). Vérifier les conditions de l'offre gratuite : les données envoyées peuvent servir à améliorer les modèles de Google. Les articles étant publics, ce n'est pas bloquant.
+Créer une clé gratuite sur [aistudio.google.com](https://aistudio.google.com) (menu Dashboard > API keys, ou directement aistudio.google.com/apikey). Vérifier les conditions de l'offre gratuite : les données envoyées peuvent servir à améliorer les modèles de Google. Les articles étant publics, ce n'est pas bloquant.
 
 ### 3. Déploiement Vercel
 
@@ -39,7 +39,7 @@ Créer une clé gratuite sur [aistudio.google.com](https://aistudio.google.com) 
 | `SUPABASE_SERVICE_ROLE_KEY` | clé `service_role` (secrète) |
 | `CRON_SECRET` | une longue chaîne aléatoire |
 | `LLM_PROVIDER` | `gemini` |
-| `LLM_MODEL` | `gemini-2.5-flash` (ou le modèle gratuit en vigueur) |
+| `LLM_MODEL` | `gemini-3.8-flash` (modèle Flash gratuit en vigueur) |
 | `GEMINI_API_KEY` | clé Google AI Studio |
 | `CLASSIFY_BATCH` | `25` |
 
