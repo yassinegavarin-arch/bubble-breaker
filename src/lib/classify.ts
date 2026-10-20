@@ -2,11 +2,11 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { ARGUMENTS, STANCES, displayName, type Stance } from "./types";
 
 export const PROMPT_VERSION = "v1";
-const CHUNK = 20;
+const CHUNK = 10;
 /** Appels IA simultanés (le quota gratuit tolère une dizaine de requêtes par minute). */
-const PARALLEL = 3;
+const PARALLEL = 4;
 /** Durée maximale d'un appel IA. */
-const CALL_TIMEOUT_MS = 28_000;
+const CALL_TIMEOUT_MS = 45_000;
 
 interface Todo {
   article_id: number;
@@ -51,7 +51,23 @@ function buildPrompt(items: Todo[]): string {
   return `Classe ces ${items.length} articles.\n\n${lines.join("\n\n")}`;
 }
 
+/** Réflexion réduite : la classification n'en a pas besoin et cela divise le temps de réponse. */
+let lowThinking = true;
+
 async function callGemini(prompt: string): Promise<string> {
+  try {
+    return await callGeminiOnce(prompt);
+  } catch (err) {
+    // Modèle qui ne reconnaît pas le réglage de réflexion : on réessaie sans.
+    if (lowThinking && /HTTP 400/.test(String(err)) && /thinking/i.test(String(err))) {
+      lowThinking = false;
+      return callGeminiOnce(prompt);
+    }
+    throw err;
+  }
+}
+
+async function callGeminiOnce(prompt: string): Promise<string> {
   const key = process.env.GEMINI_API_KEY;
   if (!key) throw new Error("GEMINI_API_KEY manquante");
   const model = process.env.LLM_MODEL || "gemini-3.8-flash";
@@ -61,7 +77,11 @@ async function callGemini(prompt: string): Promise<string> {
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: SYSTEM }] },
       contents: [{ role: "user", parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0, responseMimeType: "application/json" },
+      generationConfig: {
+        temperature: 0,
+        responseMimeType: "application/json",
+        ...(lowThinking ? { thinkingConfig: { thinkingLevel: "low" } } : {}),
+      },
     }),
     signal: AbortSignal.timeout(CALL_TIMEOUT_MS),
   });

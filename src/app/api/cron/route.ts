@@ -6,7 +6,7 @@ import { updateStories } from "@/lib/stories";
 import { adminClient } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 /** Délai minimum entre deux déclenchements publics (sans CRON_SECRET). */
 const COOLDOWN_ALL_MIN = 90;
@@ -48,13 +48,13 @@ export async function GET(req: NextRequest) {
   }
 
   const started = Date.now();
-  const deadline = started + 56_000;
+  const deadline = started + (step === "classify" ? 270_000 : 56_000);
 
   try {
     if (step === "all" || step === "collect") result.collect = await collect(db);
     if (step === "all" || step === "stories") result.stories = await updateStories(db);
     if ((step === "all" || step === "classify") && Date.now() < deadline) {
-      result.classify = await classifyPending(db, deadline, step === "classify" ? 120 : undefined);
+      result.classify = await classifyPending(db, deadline, step === "classify" ? 400 : undefined);
     }
     result.seconds = Math.round((Date.now() - started) / 100) / 10;
     return NextResponse.json(result);

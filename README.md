@@ -55,7 +55,7 @@ curl "https://bubble-breaker-psi.vercel.app/api/cron?step=all"
 
 ### 5. Collecte automatique
 
-Le fichier `.github/workflows/collecte.yml` lance la collecte toutes les 3 heures et le classement IA toutes les 30 minutes, sans secret à configurer.
+Le fichier `.github/workflows/collecte.yml` lance la collecte toutes les 3 heures et le classement IA toutes les 2 heures, sans secret à configurer.
 
 ## Fichiers clés
 
