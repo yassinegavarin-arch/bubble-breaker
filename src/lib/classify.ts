@@ -114,9 +114,11 @@ function parseVerdicts(raw: string, count: number): Map<number, Verdict> {
 export async function classifyPending(
   db: SupabaseClient,
   deadline: number,
-): Promise<{ classified: number; failed: number; provider: string }> {
+  maxItems?: number,
+): Promise<{ classified: number; failed: number; provider: string; lastError?: string }> {
   const provider = process.env.LLM_PROVIDER === "anthropic" ? "anthropic" : "gemini";
-  const limit = Number(process.env.CLASSIFY_BATCH) || 25;
+  const limit = maxItems ?? (Number(process.env.CLASSIFY_BATCH) || 25);
+  let lastError: string | undefined;
   const model = process.env.LLM_MODEL || (provider === "anthropic" ? "claude-haiku-5-5" : "gemini-3.8-flash");
 
   const { data, error } = await db
@@ -168,9 +170,10 @@ export async function classifyPending(
     } catch (err) {
       // Quota atteint ou panne : on s'arrête, les articles restent en attente pour la prochaine exécution.
       console.error("Classification interrompue :", err);
+      lastError = String(err).slice(0, 300);
       break;
     }
   }
 
-  return { classified, failed, provider };
+  return { classified, failed, provider, lastError };
 }
