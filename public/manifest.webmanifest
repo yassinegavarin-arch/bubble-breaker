@@ -1,0 +1,11 @@
+{
+  "name": "Bubble Breaker",
+  "short_name": "Bubble Breaker",
+  "description": "Sortez de votre bulle : voyez ce que lit le camp d'en face.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f6f3ee",
+  "theme_color": "#f6f3ee",
+  "lang": "fr",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}
