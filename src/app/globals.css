@@ -91,7 +91,7 @@ h1, h2, h3 { font-family: var(--display); font-weight: 500; line-height: 1.1; le
 .btn:hover svg { transform: translateY(3px); }
 .stats { display: flex; flex-wrap: wrap; gap: 42px; margin-top: 56px; }
 .stat b { display: block; font-family: var(--display); font-size: clamp(2.4rem, 5vw, 3.4rem); font-weight: 600; line-height: 1; color: var(--brown); }
-.stat span { font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); }
+.stat > span { font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); }
 
 /* Bulles de verre qui montent devant l'image ; un clic les fait éclater */
 .bubbles { position: absolute; inset: 0; z-index: -1; overflow: hidden; }
@@ -133,7 +133,8 @@ section.block.cream { background: var(--cream); }
 .gap-number small { font-size: 0.35em; letter-spacing: 0.02em; }
 
 /* Bulle du moment : bandeau doré compact */
-.bubble-band { padding: 28px 0 0; background: var(--bg); }
+.bubble-band { padding: 28px 0 28px; background: var(--bg); }
+#personnalites { padding-top: 64px; }
 .moment { display: flex; align-items: center; gap: 18px; padding: 14px 18px 14px 14px; border-radius: 999px; text-decoration: none; color: var(--ink);
   background: linear-gradient(100deg, #fbf3e2, #f3e2bd 55%, #ead19c); border: 1px solid rgba(192, 138, 43, 0.45);
   box-shadow: 0 6px 24px rgba(192, 138, 43, 0.18); position: relative; overflow: hidden; transition: transform 0.5s var(--ease), box-shadow 0.5s var(--ease); }
