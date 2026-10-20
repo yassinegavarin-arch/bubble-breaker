@@ -56,7 +56,7 @@ h1, h2, h3 { font-family: var(--display); font-weight: 500; line-height: 1.1; le
 
 /* ---------- En-tête translucide ---------- */
 .site-header { position: fixed; top: 16px; left: 0; right: 0; z-index: 50; pointer-events: none; }
-.site-header .bar {
+.site-header .nav-shell {
   pointer-events: auto; max-width: 1000px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 16px;
   padding: 10px 12px 10px 22px; border-radius: 999px; background: rgba(250, 248, 245, 0.78); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
   border: 1px solid rgba(255, 255, 255, 0.6); box-shadow: var(--shadow);
@@ -309,7 +309,7 @@ table.list th { font-weight: 500; color: var(--ink-soft); font-size: 0.78rem; le
 @media (max-width: 640px) {
   .nav a:not(.cta) { display: none; }
   .site-header { top: 10px; }
-  .site-header .bar { margin: 0 12px; }
+  .site-header .nav-shell { margin: 0 12px; }
   .seg { grid-template-columns: 1fr; margin-top: -30px; }
   .thermo-row { grid-template-columns: 104px 1fr 44px; gap: 8px; }
   .hero { min-height: 88vh; padding-top: 120px; }

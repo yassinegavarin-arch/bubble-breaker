@@ -6,14 +6,19 @@ export interface Portrait {
   credit: string;
 }
 
-/**
- * Portrait d'une personnalité, tiré de l'image principale de son article Wikipédia
- * (photos sous licence libre de Wikimedia Commons). Mis en cache 7 jours.
- */
-async function fetchPortrait(wiki: string): Promise<Portrait | null> {
+const UA = "BubbleBreaker/0.2 (https://bubble-breaker-psi.vercel.app; contact via GitHub yassinegavarin-arch)";
+
+interface WikiImages {
+  /** URLs candidates, de la plus adaptée à la plus lourde. */
+  candidates: string[];
+  credit: string;
+}
+
+/** Image principale de l'article Wikipédia (photos sous licence libre de Wikimedia Commons). Cache 7 jours. */
+export async function wikiImages(wiki: string): Promise<WikiImages | null> {
   try {
     const res = await fetch(`https://fr.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(wiki)}`, {
-      headers: { "User-Agent": "BubbleBreaker/0.2 (https://bubble-breaker-psi.vercel.app)" },
+      headers: { "User-Agent": UA },
       next: { revalidate: 7 * 24 * 3600 },
       signal: AbortSignal.timeout(5000),
     });
@@ -22,24 +27,32 @@ async function fetchPortrait(wiki: string): Promise<Portrait | null> {
     const thumb: string | undefined = json?.thumbnail?.source;
     const original: string | undefined = json?.originalimage?.source;
     if (!thumb && !original) return null;
-    // Vignette élargie à 640 px pour un rendu net sur les cartes.
-    const src = thumb ? thumb.replace(/\/\d+px-/, "/640px-") : original!;
+    // Wikimedia n'accepte que des largeurs standard : 500 px convient aux cartes.
+    const candidates = [thumb?.replace(/\/\d+px-/, "/500px-"), thumb, original].filter((u): u is string => Boolean(u));
     const file = (original ?? thumb ?? "").split("/").pop()?.replace(/^\d+px-/, "");
     const credit = file
       ? `https://commons.wikimedia.org/wiki/File:${decodeURIComponent(file)}`
       : json?.content_urls?.desktop?.page ?? "https://commons.wikimedia.org";
-    return { src, credit };
+    return { candidates: Array.from(new Set(candidates)), credit };
   } catch {
     return null;
   }
 }
 
+export { UA as WIKI_UA };
+
+async function fetchPortrait(slug: string, wiki: string): Promise<Portrait | null> {
+  const images = await wikiImages(wiki);
+  // L'image est servie par notre propre route (/api/portrait), mise en cache par Vercel.
+  return images ? { src: `/api/portrait/${slug}`, credit: images.credit } : null;
+}
+
 export async function getPortraits(): Promise<Record<string, Portrait | null>> {
-  const entries = await Promise.all(PERSONALITIES.map(async (p) => [p.slug, await fetchPortrait(p.wiki)] as const));
+  const entries = await Promise.all(PERSONALITIES.map(async (p) => [p.slug, await fetchPortrait(p.slug, p.wiki)] as const));
   return Object.fromEntries(entries);
 }
 
 export async function getPortrait(slug: string): Promise<Portrait | null> {
   const def = PERSONALITIES.find((p) => p.slug === slug);
-  return def ? fetchPortrait(def.wiki) : null;
+  return def ? fetchPortrait(def.slug, def.wiki) : null;
 }

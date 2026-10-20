@@ -38,7 +38,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <header className="site-header">
-          <div className="bar">
+          <div className="nav-shell">
             <Link href="/" className="brand">
               <BrandMark />
               Bubble <em>Breaker</em>
