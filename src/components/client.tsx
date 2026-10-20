@@ -251,3 +251,55 @@ export function FlipCard({ d, delay = 0 }: { d: FlipCardData; delay?: number }) 
     </Reveal>
   );
 }
+
+export interface VideoData {
+  videoId: string;
+  title: string;
+  channel: string;
+  views: number;
+  thumbnail: string;
+  summary: string | null;
+  publishedAt: string;
+}
+
+function compact(n: number): string {
+  return new Intl.NumberFormat("fr-FR", { notation: "compact", maximumFractionDigits: 1 }).format(n);
+}
+
+/**
+ * Vidéo lisible dans l'application. Le lecteur YouTube (mode confidentialité renforcée)
+ * n'est chargé qu'au clic : aucun contact avec Google avant.
+ */
+export function VideoCard({ v, side }: { v: VideoData; side: "plus" | "minus" }) {
+  const [playing, setPlaying] = useState(false);
+  return (
+    <figure className={`video ${side}`}>
+      <div className="video-frame">
+        {playing ? (
+          <iframe
+            src={`https://www.youtube-nocookie.com/embed/${v.videoId}?autoplay=1&rel=0&modestbranding=1`}
+            title={v.title}
+            allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+            allowFullScreen
+          />
+        ) : (
+          <button type="button" className="video-poster" onClick={() => setPlaying(true)} aria-label={`Lire : ${v.title}`}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={v.thumbnail} alt="" loading="lazy" />
+            <span className="play">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            </span>
+            <span className="views">{compact(v.views)} vues</span>
+          </button>
+        )}
+      </div>
+      <figcaption>
+        <b>{v.title}</b>
+        <span>{v.channel}</span>
+        {v.summary && <small>{v.summary}</small>}
+      </figcaption>
+    </figure>
+  );
+}

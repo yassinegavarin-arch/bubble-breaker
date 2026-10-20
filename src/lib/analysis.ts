@@ -1,4 +1,5 @@
 import { LEANINGS, type FeedRow, type Leaning, type Stance } from "./types";
+import { isSocial } from "./viral";
 
 export interface StoryCard {
   key: string;
@@ -11,16 +12,18 @@ export interface StoryCard {
   argument: string | null;
   score: number;
   isViral: boolean;
+  /** L'histoire relaie un contenu viral des réseaux sociaux. */
+  social: boolean;
   firstSeen: string;
   articles: Pick<FeedRow, "article_id" | "url" | "title" | "source_name" | "leaning" | "published_at">[];
   leanings: Leaning[];
 }
 
 /** Regroupe les articles d'une même position par fait, du plus viral au moins viral. */
-export function storyCards(rows: FeedRow[], stance: Stance): StoryCard[] {
+export function storyCards(rows: FeedRow[], stance: Stance, onlySocial = false): StoryCard[] {
   const groups = new Map<string, FeedRow[]>();
   for (const r of rows) {
-    if (r.stance !== stance) continue;
+    if (r.stance !== stance || r.kind === "video") continue;
     const key = r.story_id != null ? `s${r.story_id}` : `a${r.article_id}`;
     const list = groups.get(key) ?? [];
     list.push(r);
@@ -42,6 +45,7 @@ export function storyCards(rows: FeedRow[], stance: Stance): StoryCard[] {
       argument: lead.argument,
       score: Number(lead.story_score ?? 0),
       isViral: Boolean(lead.is_viral),
+      social: list.some((r) => r.social || isSocial(r.title, r.domain)),
       firstSeen: sorted[0].published_at,
       articles: sorted.map(({ article_id, url, title, source_name, leaning, published_at }) => ({
         article_id,
@@ -55,7 +59,9 @@ export function storyCards(rows: FeedRow[], stance: Stance): StoryCard[] {
     };
   });
 
-  return cards.sort((a, b) => b.score - a.score || b.articles.length - a.articles.length || Date.parse(b.firstSeen) - Date.parse(a.firstSeen));
+  return cards
+    .filter((c) => !onlySocial || c.social)
+    .sort((a, b) => b.score - a.score || b.articles.length - a.articles.length || Date.parse(b.firstSeen) - Date.parse(a.firstSeen));
 }
 
 export interface Balance {
@@ -118,5 +124,15 @@ export function topArguments(rows: FeedRow[], stance: Stance, n = 3) {
   }
   return Array.from(counts, ([argument, v]) => ({ argument, ...v }))
     .sort((a, b) => b.count - a.count)
+    .slice(0, n);
+}
+
+/** Vidéos d'une position, des plus vues aux moins vues. */
+export function topVideos(rows: FeedRow[], stance: Stance, n = 8): FeedRow[] {
+  const seen = new Set<string>();
+  return rows
+    .filter((r) => r.kind === "video" && r.stance === stance && r.video_id)
+    .sort((a, b) => (b.views ?? 0) - (a.views ?? 0))
+    .filter((r) => (seen.has(r.video_id!) ? false : (seen.add(r.video_id!), true)))
     .slice(0, n);
 }

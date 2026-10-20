@@ -26,6 +26,17 @@ export default async function Methode() {
         français et dans la langue du pays de chaque personnalité. Seuls le titre, un extrait court et le lien sont
         conservés. Un article n&apos;est retenu que si le nom de la personnalité figure dans son titre ou son extrait.
       </p>
+      <p>
+        <strong>Contenus viraux des réseaux sociaux.</strong> Faute d&apos;accès direct à TikTok, X ou Instagram, Bubble
+        Breaker les capte à travers la presse qui les relaie : recherches ciblées (« vidéo virale », « buzz »,
+        « TikTok », « sur X »…) et sites spécialisés dans la reprise de posts viraux (Konbini, Brut, Mediaite, Twitchy,
+        The Daily Dot…). Ces articles portent la mention « Vu sur les réseaux ».
+      </p>
+      <p>
+        <strong>Vidéos YouTube.</strong> Toutes les 6 heures, les vidéos les plus vues de la semaine sur chaque
+        personnalité sont récupérées avec leur nombre de vues, puis classées comme les articles. Elles se lisent
+        directement dans l&apos;application.
+      </p>
 
       <h2>2. Classement</h2>
       <p>

@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { COUNTRIES } from "@/data/personalities";
-import { balance, storyCards, thermometer, topArguments } from "@/lib/analysis";
+import { balance, storyCards, thermometer, topArguments, topVideos } from "@/lib/analysis";
 import { getPortrait } from "@/lib/portraits";
 import { getFeed, getPersonality } from "@/lib/queries";
 import { isConfigured } from "@/lib/supabase";
 import { displayName } from "@/lib/types";
-import { Reveal } from "@/components/client";
+import { Reveal, VideoCard, type VideoData } from "@/components/client";
 import { SetupNotice, StoryCardView, ThermometerView } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
@@ -18,7 +18,7 @@ type Period = keyof typeof PERIODS;
 
 interface Props {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ vue?: string; periode?: string; merci?: string }>;
+  searchParams: Promise<{ vue?: string; periode?: string; merci?: string; reseaux?: string }>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -35,13 +35,15 @@ export default async function PersonalityPage({ params, searchParams }: Props) {
   const sp = await searchParams;
   const view: View = sp.vue === "plus" || sp.vue === "moins" ? sp.vue : "egal";
   const period: Period = sp.periode === "24h" ? "24h" : "7j";
+  const onlySocial = sp.reseaux === "1";
 
   const p = await getPersonality(slug);
   if (!p) notFound();
 
   const [rows, portrait] = await Promise.all([getFeed(p.id, PERIODS[period]), getPortrait(slug)]);
   const b = balance(rows);
-  const href = (v: View, per: Period = period) => `/p/${slug}?vue=${v}&periode=${per}`;
+  const href = (v: View, per: Period = period, social = onlySocial) =>
+    `/p/${slug}?vue=${v}&periode=${per}${social ? "&reseaux=1" : ""}`;
   const back = href(view);
   const name = displayName(p);
 
@@ -101,9 +103,20 @@ export default async function PersonalityPage({ params, searchParams }: Props) {
         <div className="filters">
           {(Object.keys(PERIODS) as Period[]).map((per) => (
             <Link key={per} href={href(view, per)} className={per === period ? "on" : ""}>
-              {per === "24h" ? "Dernières 24 heures" : "7 derniers jours"}
+              {per === "24h" ? "24 heures" : "7 jours"}
             </Link>
           ))}
+          {view !== "egal" && (
+            <>
+              <span className="filters-sep" />
+              <Link href={href(view, period, false)} className={!onlySocial ? "on" : ""}>
+                Toute la presse
+              </Link>
+              <Link href={href(view, period, true)} className={onlySocial ? "on social" : "social"}>
+                Vu sur les réseaux
+              </Link>
+            </>
+          )}
         </div>
 
         {sp.merci && <div className="thanks">Merci, votre signalement a été enregistré.</div>}
@@ -113,11 +126,25 @@ export default async function PersonalityPage({ params, searchParams }: Props) {
         ) : view === "egal" ? (
           <EqualView rows={rows} />
         ) : (
-          <StoryList rows={rows} side={view === "plus" ? "plus" : "minus"} personalityId={p.id} back={back} />
+          <StoryList rows={rows} side={view === "plus" ? "plus" : "minus"} personalityId={p.id} back={back} onlySocial={onlySocial} />
         )}
       </div>
     </>
   );
+}
+
+type Rows = Awaited<ReturnType<typeof getFeed>>;
+
+function toVideo(r: Rows[number]): VideoData {
+  return {
+    videoId: r.video_id!,
+    title: r.title,
+    channel: r.source_name,
+    views: r.views ?? 0,
+    thumbnail: r.thumbnail ?? `/api/thumb/${r.video_id}`,
+    summary: r.summary_fr,
+    publishedAt: r.published_at,
+  };
 }
 
 function StoryList({
@@ -125,15 +152,36 @@ function StoryList({
   side,
   personalityId,
   back,
+  onlySocial,
 }: {
-  rows: Awaited<ReturnType<typeof getFeed>>;
+  rows: Rows;
   side: "plus" | "minus";
   personalityId: number;
   back: string;
+  onlySocial: boolean;
 }) {
-  const cards = storyCards(rows, side === "plus" ? "favorable" : "defavorable").slice(0, 30);
-  if (cards.length === 0) return <div className="empty">Aucun article de ce camp sur la période.</div>;
+  const stance = side === "plus" ? "favorable" : "defavorable";
+  const cards = storyCards(rows, stance, onlySocial).slice(0, 30);
+  const videos = topVideos(rows, stance);
+  if (cards.length === 0 && videos.length === 0) {
+    return <div className="empty">Aucun contenu de ce camp sur la période.</div>;
+  }
   return (
+    <>
+      {videos.length > 0 && (
+        <section className="videos-block">
+          <h2 className="mini-title">
+            <span className="yt-dot" /> Les vidéos les plus vues
+          </h2>
+          <div className="video-strip">
+            {videos.map((r) => (
+              <VideoCard key={r.video_id} v={toVideo(r)} side={side} />
+            ))}
+          </div>
+        </section>
+      )}
+      {cards.length > 0 && <h2 className="mini-title">{onlySocial ? "Repris des réseaux sociaux" : "Dans la presse"}</h2>}
+      {cards.length === 0 && onlySocial && <div className="empty">Aucun contenu viral relayé par la presse sur la période.</div>}
     <div className="stories">
       {cards.map((card, i) => (
         <Reveal key={card.key} delay={Math.min(i, 5) * 70}>
@@ -141,15 +189,37 @@ function StoryList({
         </Reveal>
       ))}
     </div>
+    </>
   );
 }
 
-function EqualView({ rows }: { rows: Awaited<ReturnType<typeof getFeed>> }) {
+function EqualView({ rows }: { rows: Rows }) {
   const t = thermometer(rows);
   const pro = topArguments(rows, "favorable");
   const con = topArguments(rows, "defavorable");
+  const vPro = topVideos(rows, "favorable", 1)[0];
+  const vCon = topVideos(rows, "defavorable", 1)[0];
 
   return (
+    <>
+    {(vPro || vCon) && (
+      <Reveal>
+        <section className="duel">
+          <span className="kicker">Le duel vidéo</span>
+          <h2 className="mini-title">La vidéo la plus vue de chaque camp</h2>
+          <div className="duel-grid">
+            <div>
+              <div className="duel-label plus">+ Le camp qui soutient</div>
+              {vPro ? <VideoCard v={toVideo(vPro)} side="plus" /> : <div className="empty small">Pas de vidéo favorable.</div>}
+            </div>
+            <div>
+              <div className="duel-label minus">− Le camp qui attaque</div>
+              {vCon ? <VideoCard v={toVideo(vCon)} side="minus" /> : <div className="empty small">Pas de vidéo défavorable.</div>}
+            </div>
+          </div>
+        </section>
+      </Reveal>
+    )}
     <div className="equal-grid">
       <Reveal>
         <div className="panel">
@@ -181,6 +251,7 @@ function EqualView({ rows }: { rows: Awaited<ReturnType<typeof getFeed>> }) {
         </div>
       </Reveal>
     </div>
+    </>
   );
 }
 

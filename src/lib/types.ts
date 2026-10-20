@@ -65,6 +65,12 @@ export interface FeedRow {
   is_viral: boolean | null;
   source_count: number | null;
   leaning_count: number | null;
+  kind: "article" | "video" | null;
+  social: boolean | null;
+  video_id: string | null;
+  views: number | null;
+  likes: number | null;
+  thumbnail: string | null;
 }
 
 /** Seuil de confiance en dessous duquel un classement n'est pas affiché. */

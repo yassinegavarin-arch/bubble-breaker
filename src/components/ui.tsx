@@ -76,7 +76,8 @@ export function StoryCardView({
         </a>
       </h3>
       <div className="meta">
-        {card.isViral && <span className="badge viral">Viral</span>}
+        {card.social && <span className="badge social">Vu sur les réseaux</span>}
+        {card.isViral && sources.length >= 3 && <span className="badge viral">Viral</span>}
         {card.satire && <span className="badge satire">Satire</span>}
         <span className="score" title="Score de viralité">
           <span className="track">

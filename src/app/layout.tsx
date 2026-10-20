@@ -16,7 +16,6 @@ export const metadata: Metadata = {
   title: { default: "Bubble Breaker", template: "%s · Bubble Breaker" },
   description: "Sortez de votre bulle : voyez ce que lit le camp d'en face, et mesurez l'écart.",
   manifest: "/manifest.webmanifest",
-  icons: { icon: "/icon.svg" },
 };
 
 export const viewport: Viewport = {

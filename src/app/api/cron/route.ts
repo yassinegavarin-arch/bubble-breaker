@@ -4,7 +4,8 @@ import { classifyPending } from "@/lib/classify";
 import { collect } from "@/lib/collect";
 import { updateStories } from "@/lib/stories";
 import { adminClient } from "@/lib/supabase";
-import { purgeOldReports, syncPersonalities } from "@/lib/sync";
+import { purgeOldReports, syncPersonalities, syncViralSources } from "@/lib/sync";
+import { collectYouTube } from "@/lib/youtube";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -36,6 +37,7 @@ export async function GET(req: NextRequest) {
   // Liste des personnalités alignée sur le code à chaque appel (opération légère).
   try {
     result.personalities = await syncPersonalities(db);
+    await syncViralSources(db);
     await purgeOldReports(db);
   } catch (err) {
     result.syncError = String((err as { message?: string })?.message ?? err);
@@ -57,10 +59,11 @@ export async function GET(req: NextRequest) {
   }
 
   const started = Date.now();
-  const deadline = started + (step === "classify" ? 270_000 : 56_000);
+  const deadline = started + (step === "classify" ? 270_000 : 90_000);
 
   try {
     if (step === "all" || step === "collect") result.collect = await collect(db);
+    if (step === "all" || step === "youtube") result.youtube = await collectYouTube(db, trusted && step === "youtube");
     if (step === "all" || step === "stories") result.stories = await updateStories(db);
     if ((step === "all" || step === "classify") && Date.now() < deadline) {
       result.classify = await classifyPending(db, deadline, step === "classify" ? 600 : undefined);

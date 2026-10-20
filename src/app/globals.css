@@ -353,3 +353,103 @@ table.list th { font-weight: 500; color: var(--ink-soft); font-size: 0.78rem; le
   .choice small { display: none; }
   section.block { padding: 70px 0; }
 }
+
+/* ---------- Réseaux sociaux et vidéos ---------- */
+.badge.social { background: linear-gradient(90deg, #111, #3b3b3b); color: #fff; }
+.badge.social::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #ff2d55; box-shadow: 0 0 0 3px rgba(255, 45, 85, 0.25); }
+.filters-sep { width: 1px; background: var(--line); margin: 0 4px; }
+.filters a.social.on { background: #111; border-color: #111; }
+.mini-title { font-size: 1.6rem; color: var(--brown); margin: 6px 0 16px; display: flex; align-items: center; gap: 10px; }
+.yt-dot { width: 14px; height: 14px; border-radius: 4px; background: #ff0033; position: relative; flex: none; }
+.yt-dot::after { content: ""; position: absolute; left: 5px; top: 4px; border-left: 5px solid #fff; border-top: 3px solid transparent; border-bottom: 3px solid transparent; }
+.videos-block { margin-bottom: 34px; }
+.video-strip { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px; }
+.video { margin: 0; background: var(--white); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); transition: transform 0.5s var(--ease), box-shadow 0.5s var(--ease); }
+.video:hover { transform: translateY(-3px); box-shadow: var(--shadow-lift); }
+.video.plus { border-top: 4px solid var(--plus); } .video.minus { border-top: 4px solid var(--minus); }
+.video-frame { position: relative; aspect-ratio: 16 / 9; background: var(--dark); }
+.video-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.video-poster { position: absolute; inset: 0; padding: 0; border: 0; cursor: pointer; background: var(--dark); }
+.video-poster img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.8s var(--ease), opacity 0.3s; opacity: 0.92; }
+.video-poster:hover img { transform: scale(1.05); opacity: 1; }
+.play { position: absolute; left: 50%; top: 50%; width: 62px; height: 62px; margin: -31px 0 0 -31px; border-radius: 50%; display: grid; place-items: center; color: #fff; background: rgba(255, 0, 51, 0.92); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35); transition: transform 0.4s var(--ease); }
+.play svg { margin-left: 3px; }
+.video-poster:hover .play { transform: scale(1.1); }
+.views { position: absolute; right: 10px; bottom: 10px; padding: 3px 9px; border-radius: 999px; background: rgba(0, 0, 0, 0.72); color: #fff; font-size: 0.75rem; font-weight: 600; }
+.video figcaption { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 3px; }
+.video figcaption b { font-weight: 600; font-size: 0.95rem; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.video figcaption span { font-size: 0.8rem; color: var(--ink-soft); }
+.video figcaption small { font-size: 0.8rem; color: var(--ink); }
+.duel { background: var(--white); border-radius: 22px; padding: 26px; box-shadow: var(--shadow); margin-bottom: 22px; }
+.duel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.duel-label { font-weight: 600; margin-bottom: 10px; }
+.duel-label.plus { color: var(--plus); } .duel-label.minus { color: var(--minus); }
+.empty.small { padding: 30px 16px; margin: 0; box-shadow: none; background: var(--cream); }
+
+/* ---------- Mobile ---------- */
+@media (max-width: 640px) {
+  .wrap { padding: 0 14px; }
+  .brand { font-size: 1.2rem; gap: 8px; }
+  .brand-mark { width: 22px; height: 22px; }
+  .site-header .nav-shell { padding: 8px 8px 8px 14px; }
+  .nav .cta { padding: 8px 14px; font-size: 0.82rem; }
+  .hero { min-height: auto; padding: 108px 0 56px; }
+  .hero h1 { font-size: 2.55rem; }
+  .hero .tagline { font-size: 0.95rem; letter-spacing: 0.08em; }
+  .hero p.intro { font-size: 0.98rem; }
+  .btn { padding: 13px 22px; }
+  .stats { gap: 22px; margin-top: 34px; }
+  .stat b { font-size: 2.1rem; }
+  .stat > span { font-size: 0.66rem; }
+  .scroll-hint { display: none; }
+  .section-title { font-size: 2rem; }
+  .section-lead { font-size: 0.95rem; margin-bottom: 22px; }
+  #personnalites { padding-top: 40px; }
+  .grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .flip { aspect-ratio: 3 / 4.6; }
+  .front .top { top: 10px; left: 10px; right: 10px; }
+  .chip-glass { padding: 4px 8px; font-size: 0.66rem; }
+  .turn { width: 28px; height: 28px; }
+  .front .bottom { padding: 12px; }
+  .front .name { font-size: 1.15rem; }
+  .tally { gap: 4px; margin-bottom: 8px; }
+  .tally span { font-size: 0.82rem; padding: 4px 0; border-radius: 8px; }
+  .back { padding: 12px; }
+  .back .head { margin-bottom: 8px; }
+  .back .name { font-size: 1.02rem; }
+  .back .hint, .back .credit { display: none; }
+  .choice { padding: 7px 8px; gap: 8px; margin-bottom: 6px; border-radius: 11px; }
+  .choice b { font-size: 0.8rem; }
+  .p-hero { padding: 104px 0 56px; }
+  .p-hero .row { gap: 18px; }
+  .p-hero .portrait { width: 96px; height: 96px; }
+  .p-hero h1 { font-size: 2.1rem; }
+  .p-hero .role { font-size: 0.92rem; }
+  .seg { grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: -28px; }
+  .seg a { flex-direction: column; text-align: center; gap: 6px; padding: 10px 6px; border-radius: 14px; }
+  .seg .sym { width: 38px; height: 38px; font-size: 1.6rem; border-radius: 11px; }
+  .seg b { font-size: 0.74rem; line-height: 1.2; }
+  .seg small { font-size: 0.68rem; }
+  .filters { gap: 6px; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+  .filters::-webkit-scrollbar { display: none; }
+  .filters a { white-space: nowrap; font-size: 0.8rem; padding: 6px 12px; }
+  .story { padding: 16px 16px 14px 20px; }
+  .story h3 { font-size: 1.22rem; }
+  .video-strip { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 12px; margin: 0 -14px; padding: 0 14px 8px; scrollbar-width: none; }
+  .video-strip::-webkit-scrollbar { display: none; }
+  .video-strip .video { flex: 0 0 82%; scroll-snap-align: start; }
+  .duel { padding: 18px; }
+  .duel-grid { grid-template-columns: 1fr; }
+  .panel { padding: 20px; }
+  .gap-number { font-size: 3.4rem; }
+  .prose { padding: 110px 0 60px; }
+  .prose h1 { font-size: 2.4rem; }
+  table.list { font-size: 0.8rem; display: block; overflow-x: auto; }
+  .site-footer { padding: 44px 0 30px; }
+}
+@media (max-width: 380px) {
+  .hero h1 { font-size: 2.2rem; }
+  .front .name { font-size: 1rem; }
+  .tally span { font-size: 0.74rem; }
+  .seg b { display: none; }
+}

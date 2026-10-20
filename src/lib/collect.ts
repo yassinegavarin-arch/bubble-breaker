@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { fetchFeed, googleNewsUrl, type FeedItem } from "./rss";
 import { hostname, mentions, normalize, stripHtml, truncate } from "./text";
 import type { Personality, Source } from "./types";
+import { VIRAL_QUERY, isSocial } from "./viral";
 
 const MAX_AGE_MS = 7 * 24 * 3600 * 1000;
 const CONCURRENCY = 8;
@@ -16,6 +17,7 @@ interface Candidate {
   domain: string | null;
   lang: string | null;
   published_at: string;
+  social: boolean;
   personalityIds: Set<number>;
 }
 
@@ -101,17 +103,21 @@ export async function collect(db: SupabaseClient): Promise<CollectReport> {
       domain: source?.domain ?? domain,
       lang: opts.lang,
       published_at: published.toISOString(),
+      social: isSocial(title, source?.domain ?? domain),
       personalityIds: new Set(matches.map((p) => p.id)),
     });
   }
 
-  // 1. Google News : une recherche par personnalité et par édition
+  // 1. Google News : par personnalité et par édition, une recherche générale
+  //    et une recherche ciblée sur les reprises de contenus viraux des réseaux sociaux.
   const searches = personalities.flatMap((p) =>
-    p.news_editions.map((edition) => ({
-      p,
-      edition,
-      url: googleNewsUrl(p.search_terms.map((t) => `"${t}"`).join(" OR "), edition),
-    })),
+    p.news_editions.flatMap((edition) => {
+      const who = `(${p.search_terms.map((t) => `"${t}"`).join(" OR ")})`;
+      return [
+        { p, edition, url: googleNewsUrl(who, edition) },
+        { p, edition, url: googleNewsUrl(`${who} ${VIRAL_QUERY[edition] ?? VIRAL_QUERY.fr}`, edition) },
+      ];
+    }),
   );
   // 2. Flux RSS directs des médias
   const feeds = sourceList.filter((s) => s.feed_url);

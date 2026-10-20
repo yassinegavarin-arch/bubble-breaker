@@ -50,8 +50,18 @@ export default function Confidentialite() {
       <h2>Cookies et traceurs</h2>
       <p>
         Le site ne dépose aucun cookie et n&apos;utilise aucun outil de mesure d&apos;audience, de publicité ou de
-        réseau social. Aucun bandeau de consentement n&apos;est donc nécessaire. Les polices de caractères et les
-        portraits sont servis par le site lui-même : votre navigateur ne contacte ni Google ni Wikimedia.
+        réseau social. Aucun bandeau de consentement n&apos;est donc nécessaire. Les polices de caractères, les
+        portraits et les miniatures de vidéos sont servis par le site lui-même : votre navigateur ne contacte ni
+        Google ni Wikimedia.
+      </p>
+      <p>
+        <strong>Vidéos YouTube :</strong> le lecteur n&apos;est chargé que si vous cliquez sur « lire ». Il utilise le
+        mode de confidentialité renforcée de YouTube (youtube-nocookie.com). Dès que vous lancez une vidéo, Google
+        reçoit votre adresse IP et peut appliquer ses propres règles, décrites dans la{" "}
+        <a href="https://policies.google.com/privacy?hl=fr" target="_blank" rel="noopener noreferrer">
+          politique de confidentialité de Google
+        </a>
+        .
       </p>
 
       <h2>Données concernant les personnalités et les articles</h2>
@@ -65,8 +75,8 @@ export default function Confidentialite() {
 
       <h2>Sous-traitants et transferts</h2>
       <p>
-        Vercel Inc. (hébergement du site, États-Unis) et Supabase Inc. (base de données hébergée à Francfort, Union
-        européenne). Les transferts vers les États-Unis sont encadrés par le cadre de protection des données UE–États-Unis
+        Vercel Inc. (hébergement du site, États-Unis), Supabase Inc. (base de données hébergée à Francfort, Union
+        européenne) et Google (classement par IA des articles, données des vidéos YouTube). Les transferts vers les États-Unis sont encadrés par le cadre de protection des données UE–États-Unis
         ou par les clauses contractuelles types de la Commission européenne.
       </p>
 
