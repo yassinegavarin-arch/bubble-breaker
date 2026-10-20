@@ -6,11 +6,14 @@ Pour chaque personnalité politique, l'application montre les faits les plus rep
 
 ## Fonctionnement (version gratuite)
 
-1. **Collecte** : flux RSS publics des médias et Google News, plusieurs fois par jour.
+1. **Collecte** : flux RSS publics des médias, sites relayant les contenus viraux et Google News, plusieurs fois par jour.
 2. **Regroupement** : les articles qui racontent le même fait sont réunis.
 3. **Viralité** : score sur 100 (nombre de médias 40 %, nombre de sensibilités 35 %, vitesse 25 %).
 4. **Classement IA** : favorable, défavorable, neutre ou hors sujet, avec justification.
-5. **Écrans** : accueil, fiche personnalité (+, −, =), méthode, signalement d'erreur.
+5. **Vidéos YouTube** : les plus vues de la semaine par personnalité (API gratuite, toutes les 6 h), lisibles dans l'application.
+6. **Recherche libre** : toute personnalité publique ayant un article Wikipédia en français (personne majeure selon Wikidata). Sa fiche se crée à la première recherche, puis reste suivie tant qu'elle est consultée (14 jours).
+7. **Français partout** : l'IA traduit titres et résumés en français, quelle que soit la langue de l'article.
+8. **Écrans** : accueil, fiche personnalité (+, −, =), méthode, signalement d'erreur, pages légales.
 
 Technologies : Next.js sur Vercel, base Supabase (Postgres), IA Gemini (offre gratuite) ou Claude.
 
